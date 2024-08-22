@@ -128,7 +128,7 @@ nnodes_min = int(nnodes_min *(1 - margin))
 nnodes_max = max(max(nnodes_train), max(nnodes_test))
 nnodes_max = int(nnodes_max *(1 + margin))
 
-batch_size = 1
+batch_size = 4
 
 #### MODELS INITIALIZATION, BEHEADED NETWORK AND EMBEDDINGS ####
 for i in set(data_train.keys()): # data_train.keys() are the dataset's chromatic numbers.
@@ -171,6 +171,7 @@ savplot_path = "./Decoupled/results/trials"
 models_path = "./Decoupled/models/trials"
 coloring_path = "./Decoupled/colorings/trials"
 print_every = 50
+test_every = 50
 
 for i in set(data_train.keys()): #aka: for every subdataset with a certain chi
     #i=5
@@ -181,7 +182,6 @@ for i in set(data_train.keys()): #aka: for every subdataset with a certain chi
     t_start = time()
     net, embeds = models[i]
     for epoch in range(hypers['number_epochs']):
-        test_every=50
         #if epoch<=15:
         #    test_every=1
         models[i][0].train()
