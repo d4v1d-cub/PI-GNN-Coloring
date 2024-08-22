@@ -8,9 +8,8 @@ import os
 from torch_geometric.data import Data
 import torch_geometric.utils as ut
 from itertools import chain
-dev = torch.device('cuda')
+dev = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 import torch_geometric.nn as geonn
-
 
 
 def set_seed(seed):
@@ -27,7 +26,7 @@ def set_seed(seed):
 
 
 def parse_line(file_line, node_offset=0):
-    x, y = [int(x) for x in file_line[1:-1].split(',')]
+    x, y = [int(x) for x in file_line.split()]
     x, y = x+node_offset, y+node_offset  # nodes in file are 1-indexed, whereas python is 0-indexed
     return x, y
 
@@ -56,7 +55,7 @@ class SyntheticDataset():
             nedges=int(lines[1])
             edgesnx=[parse_line(line) for line in lines[2:nedges+2]]
             nx_temp = nx.from_edgelist(edgesnx)
-            nx_graph = nx.OrderedGraph()
+            nx_graph = nx.Graph()
             nx_graph.add_nodes_from(sorted(nx_temp.nodes()))
             nx_graph.add_edges_from(nx_temp.edges, color='blue')
             #graph=ut.convert.from_networkx(nx_graph)
@@ -64,9 +63,9 @@ class SyntheticDataset():
             chr_n=int(lines[nedges+2])
             self.chroms.append(chr_n)
             if chr_n not in self.graphs.keys():
-                self.graphs.update({chr_n:[Data(edge_index=g.edge_index, nx_graph=nx_graph, nnods=nx_graph.number_of_nodes(), nedges=2*nedges, fnames=fname)]})
+                self.graphs.update({chr_n:[Data(edge_index=g.edge_index, nx_graph=nx_graph, nnods=nx_graph.number_of_nodes(), num_nodes=nx_graph.number_of_nodes(), nedges=2*nedges, fnames=fname)]})
             else:
-                self.graphs[chr_n].append(Data(edge_index=g.edge_index, nx_graph=nx_graph, nnods=nx_graph.number_of_nodes(), nedges=2*nedges, fnames=fname))
+                self.graphs[chr_n].append(Data(edge_index=g.edge_index, nx_graph=nx_graph, nnods=nx_graph.number_of_nodes(), num_nodes=nx_graph.number_of_nodes(), nedges=2*nedges, fnames=fname))
 
 
             if k > self.stop:
@@ -166,7 +165,7 @@ class GNNConv(nn.Module):
         super(GNNConv, self).__init__()
         self.layers = nn.ModuleList()
         # input layer
-        self.layers.append(geonn.GraphConv(in_feats, hidden_size, activation=F.relu))
+        self.layers.append(geonn.GraphConv(in_feats, hidden_size))
         # output layer
         self.layers.append(geonn.GraphConv(hidden_size, num_classes))
         self.dropout = nn.Dropout(p=dropout)
@@ -185,20 +184,19 @@ class GNNConv(nn.Module):
         for i, layer in enumerate(self.layers):
             if i != 0:
                 h = self.dropout(h)
-            h = layer(g, h)
+            # h = layer(g, h)
+            h = layer(h, g)
         return h
 
 
 # Construct graph to learn on #
-def get_gnn(gnn_hypers, opt_params, chrom, torch_device, torch_dtype):
+def get_gnn(gnn_hypers, chrom, torch_device, torch_dtype, nndes_min, nndes_max):
     """
     Helper function to load in GNN object, optimizer, and initial embedding layer.
     :param n_nodes: Number of nodes in graph
     :type n_nodes: int
     :param gnn_hypers: Hyperparameters to provide to GNN constructor
     :type gnn_hypers: dict
-    :param opt_params: Hyperparameters to provide to optimizer constructor
-    :type opt_params: dict
     :param torch_device: Compute device to map computations onto (CPU vs GPU)
     :type torch_dtype: str
     :param torch_dtype: Specification of pytorch datatype to use for matrix
@@ -232,7 +230,7 @@ def get_gnn(gnn_hypers, opt_params, chrom, torch_device, torch_dtype):
     net = net.type(torch_dtype).to(torch_device)
     #embed = nn.Embedding(n_nodes, dim_embedding, device=dev)
     embeds={}
-    for nnods in range(450, 560):
+    for nnods in range(nndes_min, nndes_max):
         embeds.update({nnods: nn.Embedding(nnods, dim_embedding, device=dev)})
         # set up Adam optimizer
         #params = chain(net.parameters(), embeds[nnods].parameters())

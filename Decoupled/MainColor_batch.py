@@ -7,7 +7,6 @@ import networkx as nx
 import os
 import torch.nn as nn
 import torch_geometric
-dev = torch.device('cuda')
 from torch_geometric.loader import DataLoader
 from itertools import chain
 import torch_geometric.utils as ut
@@ -32,17 +31,13 @@ print(f'Will use device: {TORCH_DEVICE}, torch dtype: {TORCH_DTYPE}')
 
 # Specify the problem instance to solve and where to find the dataset(s) here:
 
-conn="13.000000"#8.353000, 8.460000, 8.830000, 8.901000 #17.645000,18.440000,18.680000,18.880000
-chr=5
-nds=500
-TrPath=f"/raid/data/silveste/data/{nds}nods/{chr}chrom/{conn}connect/Train"
-TePath=f"/raid/data/silveste/data/{nds}nods/{chr}chrom/{conn}connect/Test"
+TrPath="./Decoupled/data/train"
+TePath="./Decoupled/data/test"
 n_data=2700
-
 data_train = SyntheticDataset(TrPath, n_data).process()
-print('TrainDataset pronto\n')
+print('TrainDataset ready\n')
 data_test = SyntheticDataset(TePath, n_data).process()#Test
-print('TestDataset pronto\n')
+print('TestDataset ready\n')
 
 for i in set(data_train.keys()):
     print(f'{i}: {len(data_train[i])}')
@@ -117,13 +112,31 @@ final_hard_losses={}
 best_colorings={}
 
 
+nnodes_train = []
+for i in set(data_train.keys()):
+    for j in range(len(data_train[i])):
+        nnodes_train.append(data_train[i][j]['nnods'])
+
+nnodes_test = []
+for i in set(data_train.keys()):
+    for j in range(len(data_train[i])):
+        nnodes_test.append(data_train[i][j]['nnods'])
+
+margin = 0.1 # fraction of the minimum to substract, or of the maximum to add
+nnodes_min = min(min(nnodes_train), min(nnodes_test))
+nnodes_min = int(nnodes_min *(1 - margin))
+nnodes_max = max(max(nnodes_train), max(nnodes_test))
+nnodes_max = int(nnodes_max *(1 + margin))
+
+batch_size = 1
+
 #### MODELS INITIALIZATION, BEHEADED NETWORK AND EMBEDDINGS ####
 for i in set(data_train.keys()): # data_train.keys() are the dataset's chromatic numbers.
     if i!=8:
-        net, embeds = get_gnn(hypers, opt_hypers, i, TORCH_DEVICE, TORCH_DTYPE)
+        net, embeds = get_gnn(hypers, i, TORCH_DEVICE, TORCH_DTYPE, nnodes_min, nnodes_max)
         models.update({i:(net, embeds)})
-        train_dataloader.update({ i : DataLoader(data_train[i], batch_size=16, shuffle=True, drop_last=True) })
-        test_dataloader.update({ i : DataLoader(data_test[i], batch_size=16, shuffle=False, drop_last=True) })
+        train_dataloader.update({ i : DataLoader(data_train[i], batch_size=batch_size, shuffle=True, drop_last=True) })
+        test_dataloader.update({ i : DataLoader(data_test[i], batch_size=batch_size, shuffle=False, drop_last=True) })
 
 #### SAVER CALLABLE DURING TRRAINING ####
 def InstaSaver(path, lista3, name):
@@ -133,21 +146,31 @@ def InstaSaver(path, lista3, name):
     file1.write(f'{[ lista3[0], float("{0:.4f}".format(lista3[1])) ]},')
     file1.close()
 
-def ModelSaver(models_i, i, type):
+def ModelSaver(path, models_i, i):
     state={'state_dict': models_i[0].state_dict()}
     for n in models_i[1].keys():
         state.update({f'embed_dict{n}':models_i[1][n].state_dict()})
-    torch.save(state, f'./SaveModel{i}{type}')
+    if not os.path.exists(f'{path}'):
+        os.makedirs(f'{path}')
+    torch.save(state, f'{path}/SaveModel{i}')
+
+def print_final_colorings(path, colorings, i, filename):
+    if not os.path.exists(f'{path}'):
+        os.makedirs(f'{path}')
+    fout = open(f'{path}/{filename}', "a")
+    if (len(colorings[i][1]) == 1):
+        list_cols=colorings[i][0].tolist()
+        fout.write(f'{i}\t{colorings[i][1][0]}\t{list_cols}\n')
+    else:
+        for j in range(len(colorings[i][1])):
+            fout.write(f'{i}\t{colorings[i][1][j]}\t{list_cols[j]}\n')
+    fout.close()
 
 #### SAVING PATHS ####
-savplot_path_dict={
-                   'plant':f'/raid/data/silveste/DataResults/batch training/planted/{nds}nods/{chr}chrom/{conn}connect',
-                   'plantl2':f'/raid/data/silveste/DataResults/batch training/planted/l2norm',
-                   'rand': f'/raid/data/silveste/DataResults/batch training/rand/{nds}nods/{chr}chrom/{conn}connect',   
-                   'permutated': f'/raid/data/silveste/DataResults/batch training/planted/permutated/{nds}nods/{chr}chrom/{conn}connect',  
-                  }
-typecurrent='permutated'
-
+savplot_path = "./Decoupled/results/trials"
+models_path = "./Decoupled/models/trials"
+coloring_path = "./Decoupled/colorings/trials"
+print_every = 50
 
 for i in set(data_train.keys()): #aka: for every subdataset with a certain chi
     #i=5
@@ -168,7 +191,7 @@ for i in set(data_train.keys()): #aka: for every subdataset with a certain chi
         EpochCumHardLossPerBatchEval=0
         #### Training ####
         for batchJ, batch in enumerate(train_dataloader[i]):
-            batch.to(dev)
+            batch.to(TORCH_DEVICE)
             #Call the embeddings u need within the initialized ones, then stack them.
             embed=torch.vstack(tuple([embeds[nnods.item()].weight for nnods in batch.nnods])) #Keep the duplicates here! (obv).
             #Retrieve nnods for every graph in batch. Use them to chain a list of batch_size parameter-sets.
@@ -184,9 +207,9 @@ for i in set(data_train.keys()): #aka: for every subdataset with a certain chi
                 name, loss, prob= run_gnn_training(batch, net, optimizer, embed, batchJ, hypers['tolerance'], seed=SEED_VALUE)
                 names.append(name) #all this cuz sometimes can't be processesd by net and triggers exception, cuzing different lengths.
 
-                if batchJ%1==0:
-                    print(f'chr: {i} | Epoch {epoch} | Soft Loss: {loss.item():.3f}| batch {batchJ} | #nodes: {batch.num_nodes}\
- | GPU memory {torch.cuda.memory_allocated(device=dev)}') # | DiscreteCost: {cost_hard.item():.1f} |
+                if batchJ%1==0 and epoch % print_every == 0:
+                    print(f'chr: {i} | Epoch {epoch} | Soft Loss: {loss.item():.3f}| batch {batchJ} | nodes: {batch.num_nodes} | GPU memory {torch.cuda.memory_allocated(device=TORCH_DEVICE)}') 
+                    # | DiscreteCost: {cost_hard.item():.1f} |
 
                 # run optimization with backpropagation
                 optimizer.zero_grad()  # clear gradient for step
@@ -194,7 +217,7 @@ for i in set(data_train.keys()): #aka: for every subdataset with a certain chi
                 optimizer.step()  # take step, update weights
 
                 detloss=loss.cpu().detach()
-                InstaSaver(f'{savplot_path_dict[typecurrent][1]}/train',[epoch,detloss],f'{i}chr_{len(data_train[i])}TrData')
+                InstaSaver(f'{savplot_path}/train',[epoch,detloss],f'{i}chr_{len(data_train[i])}TrData')
                 EpochCumLossPerBatch+=detloss
                 detprob=prob.cpu().detach()
                 #detHardLoss=cost_hard.cpu().detach()
@@ -207,15 +230,17 @@ for i in set(data_train.keys()): #aka: for every subdataset with a certain chi
                 print(f'index error for batch {batch.fnames}')
 
         #Printing avg loss at the end of every epoch.
-        print(f'CumLoss: {EpochCumLossPerBatch/len(train_dataloader[i]):.4f}')
+        if epoch % print_every == 0:
+            print(f'CumLoss: {EpochCumLossPerBatch/len(train_dataloader[i]):.4f}')
         #"Insta" because saving loss for every forward, as opposed to every epoch. 
-        InstaSaver(f'{savplot_path_dict[typecurrent]}/train',[epoch,EpochCumLossPerBatch/len(train_dataloader[i])],f'{i}chr_{len(data_train[i])}TrData')
+        InstaSaver(f'{savplot_path}/train',[epoch,EpochCumLossPerBatch/len(train_dataloader[i])],
+                   f'{i}chr_{len(data_train[i])}TrData')
         if EpochCumLossPerBatch/len(train_dataloader[i])<0.0089:
             print(f'BREAKING | Epoch {epoch} | Soft Loss: {EpochCumLossPerBatch/len(train_dataloader[i]):.3f} | batch {batchJ}')
             break
 
         # Printing the epoch recap once every [1] epochs.
-        if epoch % 1 == 0:
+        if epoch % print_every == 0:
             print(f'Epoch {epoch} | Soft Loss: {EpochCumLossPerBatch/len(train_dataloader[i]):.3f} | ChroNu: {i} |\
  time: {round(time() - t_start, 4)}s')#Discrete Cost: {EpochCumHardLossPerBatch/len(train_dataloader[i]):.1f} |
         #Append to avg losses for this chi the loss averaged on this last epoch.
@@ -226,7 +251,7 @@ for i in set(data_train.keys()): #aka: for every subdataset with a certain chi
             models[i][0].eval()
             with torch.no_grad():
                 for teBatchJ, test_batch in enumerate(test_dataloader[i]):
-                    test_batch.to(dev)
+                    test_batch.to(TORCH_DEVICE)
                     embedde=torch.vstack(tuple([embeds[nnods.item()].weight for nnods in test_batch.nnods]))
                     name, Tcost_hard, prob, coloring = run_gnn_testing(
                         test_batch, net, embedde, hypers['tolerance'], seed=SEED_VALUE)
@@ -241,14 +266,16 @@ for i in set(data_train.keys()): #aka: for every subdataset with a certain chi
 
 
                     #if j%1==0:            #  | sat:{torch.sum(test_batch.labels)/8} ## RIMETTERE PER DISCRIMINATING COLORING ##
-                    print(f'TESTING: chr_n {i} | Epoch {epoch} | HardCost: {Tcost_hard.item():.1f} \
-| batch {teBatchJ} | #nodes: {test_batch.num_nodes} | GPU memory {torch.cuda.memory_allocated(device=dev)}')# | Soft Loss: {Tloss.item():.3f}
+                    if epoch % print_every == 0:
+                        print(f'TESTING: chr_n {i} | Epoch {epoch} | HardCost: {Tcost_hard.item():.1f} \
+| batch {teBatchJ} | #nodes: {test_batch.num_nodes} | GPU memory {torch.cuda.memory_allocated(device=TORCH_DEVICE)}')# | Soft Loss: {Tloss.item():.3f}
                 #DictoListUpdate(TestMeanEpochLoss, i, [epoch, EpochCumLossPerBatchEval/len(test_dataloader[i])])
                 DictoListUpdate(TestHardMeanEpochLoss, i, [epoch, EpochCumHardLossPerBatchEval/len(test_dataloader[i])])
-            print(f'TEST-Epoch: {epoch//test_every} | Hard Cost: {EpochCumHardLossPerBatchEval/len(test_dataloader[i]):.1f}\
+            if epoch % print_every == 0:
+                print(f'TEST-Epoch: {epoch//test_every} | Hard Cost: {EpochCumHardLossPerBatchEval/len(test_dataloader[i]):.1f}\
  | time:{round(time() - t_start, 4)}s')#| Soft Loss: {EpochCumLossPerBatchEval/len(test_dataloader[i]):.3f}
-            InstaSaver(f'{savplot_path_dict[typecurrent]}/test',[epoch,EpochCumHardLossPerBatchEval/len(test_dataloader[i])],f'{i}chr_{len(data_train[i])}TrData')
-            ModelSaver(models[i], i, typecurrent)
+            InstaSaver(f'{savplot_path}/test',[epoch,EpochCumHardLossPerBatchEval/len(test_dataloader[i])],f'{i}chr_{len(data_train[i])}TrData')
+            ModelSaver(models_path, models[i], i)
         ####  End Testing  ####
 
     final_colorings.update({i:(coloring, batch.fnames)})
@@ -258,6 +285,7 @@ for i in set(data_train.keys()): #aka: for every subdataset with a certain chi
     # Final coloring
     final_loss = detloss
     print(f'Final coloring: {final_colorings[i][0]}, soft loss: {final_loss:.3f}, chromatic_number: {torch.max(coloring)+1}')
+    print_final_colorings(coloring_path, final_colorings, i, "coloring.txt")
     #final_batch.update({i:batch.fnames})
 
     runtime_gnn = round(time() - t_start, 4)
