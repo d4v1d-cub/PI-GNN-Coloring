@@ -37,6 +37,8 @@ test_every=int(sys.argv[5])
 save_path = sys.argv[6]
 models_path = sys.argv[7]
 coloring_path = sys.argv[8]
+nepochs=int(sys.argv[9])
+batch_size = int(sys.argv[10])
 print_every = 1
 test_every = 50
 
@@ -59,7 +61,7 @@ if TORCH_DEVICE.type == 'cpu':  # example with CPU
         'hidden_dim': 64,
         'seed': SEED_VALUE,
         'tolerance': 1e-3,           # Loss must change by more than tolerance, or add towards patience count
-        'number_epochs': int(1e5),   # Max number training steps
+        'number_epochs': nepochs,   # Max number training steps
         'layer_agg_type': 'mean',    # How aggregate neighbors sampled within graphSAGE
         'patience': 10000             # Number early stopping triggers before breaking loop
     }
@@ -73,7 +75,7 @@ else:                           # example with GPU
         'seed': SEED_VALUE,
         'tolerance': 1e-3,           # Loss must change by more than tolerance, or add towards patience count
         'layer_agg_type': 'mean',    # How aggregate neighbors sampled within graphSAGE
-        'number_epochs': int(5e4),   # Max number training steps
+        'number_epochs': nepochs,   # Max number training steps
         'patience': 10000             # Number early stopping triggers before breaking loop
     }
     
@@ -134,8 +136,6 @@ nnodes_min = min(min(nnodes_train), min(nnodes_test))
 nnodes_min = int(nnodes_min *(1 - margin))
 nnodes_max = max(max(nnodes_train), max(nnodes_test))
 nnodes_max = int(nnodes_max *(1 + margin))
-
-batch_size = 10
 
 #### MODELS INITIALIZATION, BEHEADED NETWORK AND EMBEDDINGS ####
 for i in set(data_train.keys()): # data_train.keys() are the dataset's chromatic numbers.
@@ -283,7 +283,7 @@ for i in set(data_train.keys()): #aka: for every subdataset with a certain chi
     # Final coloring
     final_loss = detloss
     print(f'Final coloring: {final_colorings[i][0]}, soft loss: {final_loss:.3f}, chromatic_number: {torch.max(coloring)+1}')
-    print_final_colorings(coloring_path, final_colorings, i, "coloring.txt")
+    print_final_colorings(coloring_path, final_colorings, i, f'Colorings_q_{i}_{Nstr}_ndata_{len(data_train[i])}.txt')
     #final_batch.update({i:batch.fnames})
 
     runtime_gnn = round(time() - t_start, 4)
