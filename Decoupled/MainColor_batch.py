@@ -1,12 +1,8 @@
 #Substitute TrPath and TePath in lines 38, 39 with right path.
 import random
 import torch
-import warnings
 import numpy as np
-import networkx as nx
 import os
-import torch.nn as nn
-import torch_geometric
 from torch_geometric.loader import DataLoader
 from itertools import chain
 import torch_geometric.utils as ut
@@ -15,8 +11,7 @@ from time import time
 
 
 # local imports: we load a few general utility functions from `minimal_utils.py`.
-from Utils_new_batch import(get_gnn, loss_func_color_hard,
-                      run_gnn_training, run_gnn_testing, SyntheticDataset)
+from Utils_new_batch import(get_gnn, run_gnn_training, run_gnn_testing, SyntheticDataset)
 
 # fix seed to ensure consistent results
 SEED_VALUE = 0
@@ -31,12 +26,15 @@ print(f'Will use device: {TORCH_DEVICE}, torch dtype: {TORCH_DTYPE}')
 
 # Specify the problem instance to solve and where to find the dataset(s) here:
 
-TrPath="./Decoupled/data/train"
-TePath="./Decoupled/data/test"
+q = 5   # This is the chromatic number to try for all the graphs
+Nstr="N_32"
+
+TrPath=f'./Decoupled/data/train/{Nstr}'
+TePath=f'./Decoupled/data/test/{Nstr}'
 n_data=2700
-data_train = SyntheticDataset(TrPath, n_data).process()
+data_train = SyntheticDataset(TrPath, n_data, q).process()
 print('TrainDataset ready\n')
-data_test = SyntheticDataset(TePath, n_data).process()#Test
+data_test = SyntheticDataset(TePath, n_data, q).process()#Test
 print('TestDataset ready\n')
 
 for i in set(data_train.keys()):
@@ -128,7 +126,7 @@ nnodes_min = int(nnodes_min *(1 - margin))
 nnodes_max = max(max(nnodes_train), max(nnodes_test))
 nnodes_max = int(nnodes_max *(1 + margin))
 
-batch_size = 4
+batch_size = 10
 
 #### MODELS INITIALIZATION, BEHEADED NETWORK AND EMBEDDINGS ####
 for i in set(data_train.keys()): # data_train.keys() are the dataset's chromatic numbers.
@@ -146,13 +144,13 @@ def InstaSaver(path, lista3, name):
     file1.write(f'{[ lista3[0], float("{0:.4f}".format(lista3[1])) ]},')
     file1.close()
 
-def ModelSaver(path, models_i, i):
+def ModelSaver(path, models_i, i, name):
     state={'state_dict': models_i[0].state_dict()}
     for n in models_i[1].keys():
         state.update({f'embed_dict{n}':models_i[1][n].state_dict()})
     if not os.path.exists(f'{path}'):
         os.makedirs(f'{path}')
-    torch.save(state, f'{path}/SaveModel{i}')
+    torch.save(state, f'{path}/{name}')
 
 def print_final_colorings(path, colorings, i, filename):
     if not os.path.exists(f'{path}'):
@@ -167,10 +165,10 @@ def print_final_colorings(path, colorings, i, filename):
     fout.close()
 
 #### SAVING PATHS ####
-savplot_path = "./Decoupled/results/trials"
-models_path = "./Decoupled/models/trials"
-coloring_path = "./Decoupled/colorings/trials"
-print_every = 50
+savplot_path = f'./Decoupled/results/ErdosRenyi/q_{q}/{Nstr}'
+models_path = f'./Decoupled/models/ErdosRenyi/q_{q}/{Nstr}'
+coloring_path = f'./Decoupled/colorings/ErdosRenyi/q_{q}/{Nstr}'
+print_every = 1
 test_every = 50
 
 for i in set(data_train.keys()): #aka: for every subdataset with a certain chi
@@ -207,9 +205,6 @@ for i in set(data_train.keys()): #aka: for every subdataset with a certain chi
                 name, loss, prob= run_gnn_training(batch, net, optimizer, embed, batchJ, hypers['tolerance'], seed=SEED_VALUE)
                 names.append(name) #all this cuz sometimes can't be processesd by net and triggers exception, cuzing different lengths.
 
-                if batchJ%1==0 and epoch % print_every == 0:
-                    print(f'chr: {i} | Epoch {epoch} | Soft Loss: {loss.item():.3f}| batch {batchJ} | nodes: {batch.num_nodes} | GPU memory {torch.cuda.memory_allocated(device=TORCH_DEVICE)}') 
-                    # | DiscreteCost: {cost_hard.item():.1f} |
 
                 # run optimization with backpropagation
                 optimizer.zero_grad()  # clear gradient for step
@@ -217,7 +212,7 @@ for i in set(data_train.keys()): #aka: for every subdataset with a certain chi
                 optimizer.step()  # take step, update weights
 
                 detloss=loss.cpu().detach()
-                InstaSaver(f'{savplot_path}/train',[epoch,detloss],f'{i}chr_{len(data_train[i])}TrData')
+                InstaSaver(f'{savplot_path}/train',[epoch,detloss],f'q_{i}_{Nstr}_ndata_{len(data_train[i])}_TrData')
                 EpochCumLossPerBatch+=detloss
                 detprob=prob.cpu().detach()
                 #detHardLoss=cost_hard.cpu().detach()
@@ -228,13 +223,11 @@ for i in set(data_train.keys()): #aka: for every subdataset with a certain chi
 
             except IndexError:
                 print(f'index error for batch {batch.fnames}')
-
+        
         #Printing avg loss at the end of every epoch.
-        if epoch % print_every == 0:
-            print(f'CumLoss: {EpochCumLossPerBatch/len(train_dataloader[i]):.4f}')
         #"Insta" because saving loss for every forward, as opposed to every epoch. 
         InstaSaver(f'{savplot_path}/train',[epoch,EpochCumLossPerBatch/len(train_dataloader[i])],
-                   f'{i}chr_{len(data_train[i])}TrData')
+                   f'q_{i}_{Nstr}_ndata_{len(data_train[i])}_TrData')
         if EpochCumLossPerBatch/len(train_dataloader[i])<0.0089:
             print(f'BREAKING | Epoch {epoch} | Soft Loss: {EpochCumLossPerBatch/len(train_dataloader[i]):.3f} | batch {batchJ}')
             break
@@ -242,7 +235,7 @@ for i in set(data_train.keys()): #aka: for every subdataset with a certain chi
         # Printing the epoch recap once every [1] epochs.
         if epoch % print_every == 0:
             print(f'Epoch {epoch} | Soft Loss: {EpochCumLossPerBatch/len(train_dataloader[i]):.3f} | ChroNu: {i} |\
- time: {round(time() - t_start, 4)}s')#Discrete Cost: {EpochCumHardLossPerBatch/len(train_dataloader[i]):.1f} |
+ time: {round(time() - t_start, 4)}s | GPU memory {torch.cuda.memory_allocated(device=TORCH_DEVICE)}')#Discrete Cost: {EpochCumHardLossPerBatch/len(train_dataloader[i]):.1f} |
         #Append to avg losses for this chi the loss averaged on this last epoch.
         DictoListUpdate(MeanEpochLoss, i, EpochCumLossPerBatch/len(train_dataloader[i]))
 
@@ -266,16 +259,16 @@ for i in set(data_train.keys()): #aka: for every subdataset with a certain chi
 
 
                     #if j%1==0:            #  | sat:{torch.sum(test_batch.labels)/8} ## RIMETTERE PER DISCRIMINATING COLORING ##
-                    if epoch % print_every == 0:
-                        print(f'TESTING: chr_n {i} | Epoch {epoch} | HardCost: {Tcost_hard.item():.1f} \
-| batch {teBatchJ} | #nodes: {test_batch.num_nodes} | GPU memory {torch.cuda.memory_allocated(device=TORCH_DEVICE)}')# | Soft Loss: {Tloss.item():.3f}
+#                     if epoch % print_every == 0:
+#                         print(f'TESTING: chr_n {i} | Epoch {epoch} | HardCost: {Tcost_hard.item():.1f} \
+# | batch {teBatchJ} | #nodes: {test_batch.num_nodes} | GPU memory {torch.cuda.memory_allocated(device=TORCH_DEVICE)}')# | Soft Loss: {Tloss.item():.3f}
                 #DictoListUpdate(TestMeanEpochLoss, i, [epoch, EpochCumLossPerBatchEval/len(test_dataloader[i])])
                 DictoListUpdate(TestHardMeanEpochLoss, i, [epoch, EpochCumHardLossPerBatchEval/len(test_dataloader[i])])
             if epoch % print_every == 0:
                 print(f'TEST-Epoch: {epoch//test_every} | Hard Cost: {EpochCumHardLossPerBatchEval/len(test_dataloader[i]):.1f}\
  | time:{round(time() - t_start, 4)}s')#| Soft Loss: {EpochCumLossPerBatchEval/len(test_dataloader[i]):.3f}
-            InstaSaver(f'{savplot_path}/test',[epoch,EpochCumHardLossPerBatchEval/len(test_dataloader[i])],f'{i}chr_{len(data_train[i])}TrData')
-            ModelSaver(models_path, models[i], i)
+            InstaSaver(f'{savplot_path}/test',[epoch,EpochCumHardLossPerBatchEval/len(test_dataloader[i])],f'q_{i}_{Nstr}_ndata_{len(data_train[i])}_TstData')
+            ModelSaver(models_path, models[i], i, f'Model_q_{i}_{Nstr}_ndata_{len(data_train[i])}')
         ####  End Testing  ####
 
     final_colorings.update({i:(coloring, batch.fnames)})

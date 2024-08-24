@@ -32,14 +32,14 @@ def parse_line(file_line, node_offset=0):
 
 
 class SyntheticDataset():
-    def __init__(self, root, stop):
+    def __init__(self, root, stop, chr_n):
         self.stop=stop-2
         self.root=root
         self.key=0
+        self.chr_n = chr_n
     def process(self):
         self.graphs = {}
         self.nxgraphs={}
-        self.chroms=[]
         #self.labels = []
         self.fnames={}
         print(f'Building graph from contents of file: ')
@@ -60,12 +60,10 @@ class SyntheticDataset():
             nx_graph.add_edges_from(nx_temp.edges, color='blue')
             #graph=ut.convert.from_networkx(nx_graph)
             g = ut.from_networkx(nx_graph)
-            chr_n=int(lines[nedges+2])
-            self.chroms.append(chr_n)
-            if chr_n not in self.graphs.keys():
-                self.graphs.update({chr_n:[Data(edge_index=g.edge_index, nx_graph=nx_graph, nnods=nx_graph.number_of_nodes(), num_nodes=nx_graph.number_of_nodes(), nedges=2*nedges, fnames=fname)]})
+            if self.chr_n not in self.graphs.keys():
+                self.graphs.update({self.chr_n:[Data(edge_index=g.edge_index, nx_graph=nx_graph, nnods=nx_graph.number_of_nodes(), num_nodes=nx_graph.number_of_nodes(), nedges=nedges, fnames=fname)]})
             else:
-                self.graphs[chr_n].append(Data(edge_index=g.edge_index, nx_graph=nx_graph, nnods=nx_graph.number_of_nodes(), num_nodes=nx_graph.number_of_nodes(), nedges=2*nedges, fnames=fname))
+                self.graphs[self.chr_n].append(Data(edge_index=g.edge_index, nx_graph=nx_graph, nnods=nx_graph.number_of_nodes(), num_nodes=nx_graph.number_of_nodes(), nedges=nedges, fnames=fname))
 
 
             if k > self.stop:
