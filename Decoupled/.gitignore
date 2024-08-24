@@ -1,2 +1,4 @@
 /venv_dec
 /__pycache__
+/data/train
+/data/test
