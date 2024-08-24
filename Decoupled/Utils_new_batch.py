@@ -112,7 +112,7 @@ class GNNSage(nn.Module):
         #self.v_init = nn.Parameter(torch.randn(in_feats))
         self.layers = nn.ModuleList()
         # input layer
-        self.layers.append(geonn.SAGEConv(in_feats, hidden_size, agg_type, activation=F.relu))
+        self.layers.append(geonn.SAGEConv(in_feats, hidden_size, agg_type))
         # output layer
 
         self.layers.append(geonn.SAGEConv(hidden_size, num_classes, agg_type))
