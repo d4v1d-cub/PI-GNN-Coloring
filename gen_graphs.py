@@ -28,9 +28,9 @@ def print_all(min_exp, max_exp, c_list, ngraphs_each, seed0, path):
 
 s0 = 1
 ng_each = 1
-c_l = [6]
+c_l = [3, 4]
 min_e = 4
-max_e = 4
+max_e = 6
 
 path_to_graphs = "./random_graphs/ErdosRenyi"
 

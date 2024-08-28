@@ -2,3 +2,6 @@
 /__pycache__
 /data/train
 /data/test
+/results
+/models
+/colorings

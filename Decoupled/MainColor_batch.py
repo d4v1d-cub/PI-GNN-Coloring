@@ -26,8 +26,8 @@ print(f'Will use device: {TORCH_DEVICE}, torch dtype: {TORCH_DTYPE}')
 
 # Specify the problem instance to solve and where to find the dataset(s) here:
 
-q = 5   # This is the chromatic number to try for all the graphs
-Nstr="N_32"
+q = 3   # This is the chromatic number to try for all the graphs
+Nstr="N_64"
 
 TrPath=f'./Decoupled/data/train/{Nstr}'
 TePath=f'./Decoupled/data/test/{Nstr}'
@@ -126,7 +126,7 @@ nnodes_min = int(nnodes_min *(1 - margin))
 nnodes_max = max(max(nnodes_train), max(nnodes_test))
 nnodes_max = int(nnodes_max *(1 + margin))
 
-batch_size = 10
+batch_size = 1
 
 #### MODELS INITIALIZATION, BEHEADED NETWORK AND EMBEDDINGS ####
 for i in set(data_train.keys()): # data_train.keys() are the dataset's chromatic numbers.

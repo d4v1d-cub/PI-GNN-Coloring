@@ -1,3 +1,7 @@
 /venv
 /venv_cuda
+/data
+/losses
+/colorings
+/chroms
 /__pycache__

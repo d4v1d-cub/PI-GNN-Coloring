@@ -23,9 +23,9 @@ print(f'Will use device: {TORCH_DEVICE}, torch dtype: {TORCH_DTYPE}')
 
 
 # Specify the problem instance to solve and where to find the dataset(s) here:
-q = 5
+q = 3
 TrPath = "Original/data/train"
-nepochs = int(1e3)
+nepochs = int(1e5)
 path_loss = "Original/losses"
 path_chroms = "Original/chroms"
 path_colorings = "Original/colorings"

@@ -53,21 +53,28 @@ class SyntheticDataset():
             lines = content.split('\n')  # skip comment line(s)
             n=int(lines[0])
             nedges=int(lines[1])
-            edgesnx=[parse_line(line) for line in lines[2:nedges+2]]
-            nx_temp = nx.from_edgelist(edgesnx)
-            nx_graph = nx.Graph()
-            nx_graph.add_nodes_from(sorted(nx_temp.nodes()))
-            nx_graph.add_edges_from(nx_temp.edges, color='blue')
+            edgesnx=[parse_line(line, -1) for line in lines[2:nedges+2]]
+            
+            nx_orig = nx.Graph()
+            for i in range(n):
+                nx_orig.add_node(i)
+            for edge in edgesnx:
+                nx_orig.add_edge(edge[0], edge[1])
+
+            nx_clean = nx_orig.copy()
+            nx_clean.remove_nodes_from(list(nx.isolates(nx_clean)))
+            nx_clean = nx.convert_node_labels_to_integers(nx_clean)
+            
             #graph=ut.convert.from_networkx(nx_graph)
-            g = ut.from_networkx(nx_graph)
+            g = ut.from_networkx(nx_clean)
 
             if len(lines) == nedges+3:
                 self.chr_n = int(lines[nedges+2])
 
             if self.chr_n not in self.graphs.keys():
-                self.graphs.update({self.chr_n:[Data(edge_index=g.edge_index, nx_graph=nx_graph, nnods=nx_graph.number_of_nodes(), num_nodes=nx_graph.number_of_nodes(), nedges=nedges, fnames=fname)]})
+                self.graphs.update({self.chr_n:[Data(edge_index=g.edge_index, nx_graph=nx_clean, nnods=nx_clean.number_of_nodes(), num_nodes=nx_clean.number_of_nodes(), nedges=nedges, fnames=fname)]})
             else:
-                self.graphs[self.chr_n].append(Data(edge_index=g.edge_index, nx_graph=nx_graph, nnods=nx_graph.number_of_nodes(), num_nodes=nx_graph.number_of_nodes(), nedges=nedges, fnames=fname))
+                self.graphs[self.chr_n].append(Data(edge_index=g.edge_index, nx_graph=nx_clean, nnods=nx_clean.number_of_nodes(), num_nodes=nx_clean.number_of_nodes(), nedges=nedges, fnames=fname))
 
 
             if k > self.stop:
