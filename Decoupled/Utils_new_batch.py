@@ -60,6 +60,10 @@ class SyntheticDataset():
             nx_graph.add_edges_from(nx_temp.edges, color='blue')
             #graph=ut.convert.from_networkx(nx_graph)
             g = ut.from_networkx(nx_graph)
+
+            if len(lines) == nedges+3:
+                self.chr_n = int(lines[nedges+2])
+
             if self.chr_n not in self.graphs.keys():
                 self.graphs.update({self.chr_n:[Data(edge_index=g.edge_index, nx_graph=nx_graph, nnods=nx_graph.number_of_nodes(), num_nodes=nx_graph.number_of_nodes(), nedges=nedges, fnames=fname)]})
             else:

@@ -27,10 +27,10 @@ def print_all(min_exp, max_exp, c_list, ngraphs_each, seed0, path):
 
 
 s0 = 1
-ng_each = 100
-c_l = [9, 11, 12, 12.5, 12.6, 12.7, 13, 13.5, 14, 15]
+ng_each = 1
+c_l = [6]
 min_e = 4
-max_e = 15
+max_e = 4
 
 path_to_graphs = "./random_graphs/ErdosRenyi"
 
