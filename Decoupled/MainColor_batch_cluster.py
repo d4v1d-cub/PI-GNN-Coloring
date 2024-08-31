@@ -39,6 +39,8 @@ models_path = sys.argv[7]
 coloring_path = sys.argv[8]
 nepochs=int(float(sys.argv[9]))
 batch_size = int(sys.argv[10])
+model = sys.argv[11]
+emb_dim = int(sys.argv[12])
 print_every = 1
 test_every = 50
 
@@ -52,20 +54,20 @@ print('TestDataset ready\n')
 for i in set(data_train.keys()):
     print(f'{i}: {len(data_train[i])}')
 	# Sample hyperparameters
-if TORCH_DEVICE.type == 'cpu':  # example with CPU
+if model == 'GraphConv':  # example with CPU
     hypers = {
         'model': 'GraphConv',   # set either with 'GraphConv' or 'GraphSAGE'. It cannot take other input
-        'dim_embedding': 64,
+        'dim_embedding': emb_dim,
         'dropout': 0.1,
         'learning_rate': 0.0001,
-        'hidden_dim': 64,
+        'hidden_dim': emb_dim,
         'seed': SEED_VALUE,
         'tolerance': 1e-3,           # Loss must change by more than tolerance, or add towards patience count
         'number_epochs': nepochs,   # Max number training steps
         'layer_agg_type': 'mean',    # How aggregate neighbors sampled within graphSAGE
         'patience': 10000             # Number early stopping triggers before breaking loop
     }
-else:                           # example with GPU
+elif model == 'GraphSAGE':                           # example with GPU
     hypers = {
         'model': 'GraphSAGE',
         'dim_embedding': 77,

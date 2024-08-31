@@ -26,11 +26,11 @@ def print_all(min_exp, max_exp, c_list, ngraphs_each, seed0, path):
                 print_graph(g, path, filename)
 
 
-s0 = 1
+s0 = 2
 ng_each = 1
-c_l = [3, 4]
-min_e = 4
-max_e = 6
+c_l = [3]
+min_e = 5
+max_e = 5
 
 path_to_graphs = "./random_graphs/ErdosRenyi"
 

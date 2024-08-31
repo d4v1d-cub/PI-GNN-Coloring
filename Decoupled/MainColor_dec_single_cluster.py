@@ -7,11 +7,12 @@ from torch_geometric.loader import DataLoader
 from itertools import chain
 import torch_geometric.utils as ut
 from time import time
+import sys
 
 
 
 # local imports: we load a few general utility functions from `minimal_utils.py`.
-from Utils_new_batch import(get_gnn, run_gnn_training, run_gnn_testing, SyntheticDataset)
+from Utils_dec_single import(get_gnn, run_gnn_training, run_gnn_testing, SyntheticDataset)
 
 # fix seed to ensure consistent results
 SEED_VALUE = 0
@@ -26,61 +27,61 @@ print(f'Will use device: {TORCH_DEVICE}, torch dtype: {TORCH_DTYPE}')
 
 # Specify the problem instance to solve and where to find the dataset(s) here:
 
-q = 3   # This is the chromatic number to try for all the graphs
-Nstr="N_32"
+q = int(sys.argv[1])
 
-TrPath=f'./Decoupled/data/train/{Nstr}'
-TePath=f'./Decoupled/data/test/{Nstr}'
-n_data=2700
-data_train = SyntheticDataset(TrPath, n_data, q).process()
+filename=sys.argv[2]
+test_every=int(sys.argv[3])
+
+save_path = sys.argv[4]
+models_path = sys.argv[5]
+coloring_path = sys.argv[6]
+nepochs=int(float(sys.argv[7]))
+batch_size = int(sys.argv[8])
+model = sys.argv[9]
+emb_dim = int(sys.argv[10])
+hid_dim = int(sys.argv[11])
+print_every = 1
+test_every = 50
+
+filename_without_ext = os.path.splitext(os.path.basename(filename))[0]
+
+n_data=10000
+data_train = SyntheticDataset(filename, n_data, q).process()
 print('TrainDataset ready\n')
-data_test = SyntheticDataset(TePath, n_data, q).process()#Test
+data_test = SyntheticDataset(filename, n_data, q).process()#Test
 print('TestDataset ready\n')
 
 for i in set(data_train.keys()):
     print(f'{i}: {len(data_train[i])}')
 	# Sample hyperparameters
-# if TORCH_DEVICE.type == 'cpu':  # example with CPU
-#     hypers = {
-#         'model': 'GraphConv',   # set either with 'GraphConv' or 'GraphSAGE'. It cannot take other input
-#         'dim_embedding': 64,
-#         'dropout': 0.1,
-#         'learning_rate': 0.0001,
-#         'hidden_dim': 64,
-#         'seed': SEED_VALUE,
-#         'tolerance': 1e-3,           # Loss must change by more than tolerance, or add towards patience count
-#         'number_epochs': int(1e5),   # Max number training steps
-#         'layer_agg_type': 'mean',    # How aggregate neighbors sampled within graphSAGE
-#         'patience': 10000             # Number early stopping triggers before breaking loop
-#     }
-# else:                           # example with GPU
-#     hypers = {
-#         'model': 'GraphSAGE',
-#         'dim_embedding': 77,
-#         'dropout': 0.3784,
-#         'learning_rate': 0.02988,
-#         'hidden_dim': 32,
-#         'seed': SEED_VALUE,
-#         'tolerance': 1e-3,           # Loss must change by more than tolerance, or add towards patience count
-#         'layer_agg_type': 'mean',    # How aggregate neighbors sampled within graphSAGE
-#         'number_epochs': int(5e4),   # Max number training steps
-#         'patience': 10000             # Number early stopping triggers before breaking loop
-#     }
-
-
-
-hypers = {
+if model == 'GraphConv':  # example with CPU
+    hypers = {
         'model': 'GraphConv',   # set either with 'GraphConv' or 'GraphSAGE'. It cannot take other input
-        'dim_embedding': 80,
+        'dim_embedding': emb_dim,
         'dropout': 0.1,
         'learning_rate': 0.0001,
-        'hidden_dim': 80,
+        'hidden_dim': hid_dim,
         'seed': SEED_VALUE,
         'tolerance': 1e-3,           # Loss must change by more than tolerance, or add towards patience count
-        'number_epochs': int(1e3),   # Max number training steps
+        'number_epochs': nepochs,   # Max number training steps
         'layer_agg_type': 'mean',    # How aggregate neighbors sampled within graphSAGE
         'patience': 10000             # Number early stopping triggers before breaking loop
-}
+    }
+elif model == 'GraphSAGE':                           # example with GPU
+    hypers = {
+        'model': 'GraphSAGE',
+        'dim_embedding': emb_dim,
+        'dropout': 0.3784,
+        'learning_rate': 0.02988,
+        'hidden_dim': hid_dim,
+        'seed': SEED_VALUE,
+        'tolerance': 1e-3,           # Loss must change by more than tolerance, or add towards patience count
+        'layer_agg_type': 'mean',    # How aggregate neighbors sampled within graphSAGE
+        'number_epochs': nepochs,   # Max number training steps
+        'patience': 10000             # Number early stopping triggers before breaking loop
+    }
+else:
+    print("The model should be GraphConv or GraphSage")
     
 
 
@@ -88,7 +89,6 @@ hypers = {
 opt_hypers = {
     'lr': hypers.get('learning_rate', None)
 }
-test_every=50
 
 probs=[]
 
@@ -141,8 +141,6 @@ nnodes_min = int(nnodes_min *(1 - margin))
 nnodes_max = max(max(nnodes_train), max(nnodes_test))
 nnodes_max = int(nnodes_max *(1 + margin))
 
-batch_size = 1
-
 #### MODELS INITIALIZATION, BEHEADED NETWORK AND EMBEDDINGS ####
 for i in set(data_train.keys()): # data_train.keys() are the dataset's chromatic numbers.
     if i!=8:
@@ -180,11 +178,7 @@ def print_final_colorings(path, colorings, i, filename):
     fout.close()
 
 #### SAVING PATHS ####
-savplot_path = f'./Decoupled/results/ErdosRenyi/q_{q}/{Nstr}'
-models_path = f'./Decoupled/models/ErdosRenyi/q_{q}/{Nstr}'
-coloring_path = f'./Decoupled/colorings/ErdosRenyi/q_{q}/{Nstr}'
-print_every = 1
-test_every = 50
+
 
 for i in set(data_train.keys()): #aka: for every subdataset with a certain chi
     #i=5
@@ -227,7 +221,6 @@ for i in set(data_train.keys()): #aka: for every subdataset with a certain chi
                 optimizer.step()  # take step, update weights
 
                 detloss=loss.cpu().detach()
-                InstaSaver(f'{savplot_path}/train',[epoch,detloss],f'q_{i}_{Nstr}_ndata_{len(data_train[i])}_TrData')
                 EpochCumLossPerBatch+=detloss
                 detprob=prob.cpu().detach()
                 #detHardLoss=cost_hard.cpu().detach()
@@ -241,8 +234,9 @@ for i in set(data_train.keys()): #aka: for every subdataset with a certain chi
         
         #Printing avg loss at the end of every epoch.
         #"Insta" because saving loss for every forward, as opposed to every epoch. 
-        InstaSaver(f'{savplot_path}/train',[epoch,EpochCumLossPerBatch/len(train_dataloader[i])],
-                   f'q_{i}_{Nstr}_ndata_{len(data_train[i])}_TrData')
+        InstaSaver(f'{save_path}/train',[epoch,EpochCumLossPerBatch/len(train_dataloader[i])],
+                   f'q_{i}_{model}_embdim_{emb_dim}_hidim_{hid_dim}_filename_{filename_without_ext}_
+                   TrData')
         if EpochCumLossPerBatch/len(train_dataloader[i])<0.0089:
             print(f'BREAKING | Epoch {epoch} | Soft Loss: {EpochCumLossPerBatch/len(train_dataloader[i]):.3f} | batch {batchJ}')
             break
@@ -282,8 +276,9 @@ for i in set(data_train.keys()): #aka: for every subdataset with a certain chi
             if epoch % print_every == 0:
                 print(f'TEST-Epoch: {epoch//test_every} | Hard Cost: {EpochCumHardLossPerBatchEval/len(test_dataloader[i]):.1f}\
  | time:{round(time() - t_start, 4)}s')#| Soft Loss: {EpochCumLossPerBatchEval/len(test_dataloader[i]):.3f}
-            InstaSaver(f'{savplot_path}/test',[epoch,EpochCumHardLossPerBatchEval/len(test_dataloader[i])],f'q_{i}_{Nstr}_ndata_{len(data_train[i])}_TstData')
-            ModelSaver(models_path, models[i], i, f'Model_q_{i}_{Nstr}_ndata_{len(data_train[i])}')
+            InstaSaver(f'{save_path}/test',[epoch,EpochCumHardLossPerBatchEval/len(test_dataloader[i])],
+                       f'q_{i}_{model}_embdim_{emb_dim}_hidim_{hid_dim}_filename_{filename_without_ext}_TstData')
+            ModelSaver(models_path, models[i], i, f'Model_q_{i}_{model}_embdim_{emb_dim}_hidim_{hid_dim}_filename_{filename_without_ext}')
         ####  End Testing  ####
 
     final_colorings.update({i:(coloring, batch.fnames)})
@@ -293,7 +288,7 @@ for i in set(data_train.keys()): #aka: for every subdataset with a certain chi
     # Final coloring
     final_loss = detloss
     print(f'Final coloring: {final_colorings[i][0]}, soft loss: {final_loss:.3f}, chromatic_number: {torch.max(coloring)+1}')
-    print_final_colorings(coloring_path, final_colorings, i, "coloring.txt")
+    print_final_colorings(coloring_path, final_colorings, i, f'Colorings_q_{i}_{model}_embdim_{emb_dim}_hidim_{hid_dim}_filename_{filename_without_ext}.txt')
     #final_batch.update({i:batch.fnames})
 
     runtime_gnn = round(time() - t_start, 4)
