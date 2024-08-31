@@ -235,8 +235,7 @@ for i in set(data_train.keys()): #aka: for every subdataset with a certain chi
         #Printing avg loss at the end of every epoch.
         #"Insta" because saving loss for every forward, as opposed to every epoch. 
         InstaSaver(f'{save_path}/train',[epoch,EpochCumLossPerBatch/len(train_dataloader[i])],
-                   f'q_{i}_{model}_embdim_{emb_dim}_hidim_{hid_dim}_filename_{filename_without_ext}_
-                   TrData')
+                   f'q_{i}_{model}_embdim_{emb_dim}_hidim_{hid_dim}_filename_{filename_without_ext}_TrData')
         if EpochCumLossPerBatch/len(train_dataloader[i])<0.0089:
             print(f'BREAKING | Epoch {epoch} | Soft Loss: {EpochCumLossPerBatch/len(train_dataloader[i]):.3f} | batch {batchJ}')
             break
