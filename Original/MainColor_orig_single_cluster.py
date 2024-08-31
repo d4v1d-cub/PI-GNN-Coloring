@@ -7,7 +7,7 @@ import os
 from time import time
 
 
-from Utils_orig_cluster import(get_adjacency_matrix, saver, saver_colorings, get_gnn, 
+from Utils_orig_single_cluster import(get_adjacency_matrix, saver, saver_colorings, get_gnn, 
                                run_gnn_training, SyntheticDataset)
 
 
