@@ -122,9 +122,8 @@ class SyntheticDataset(DGLDataset):
         self.nx_orig=[]
         
         self.fnames.append(self.fname)
-        self.fpath = os.path.join(self.root, self.fname)
         print(f'Building graph from contents of file: {self.fname}')
-        with open(self.fpath, 'r') as f:
+        with open(self.fname, 'r') as f:
             content = f.read().strip()
 
         lines = content.split('\n')  # skip comment line(s)

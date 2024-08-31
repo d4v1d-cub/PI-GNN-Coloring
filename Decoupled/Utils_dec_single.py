@@ -41,11 +41,9 @@ class SyntheticDataset():
         self.graphs = {}
         self.nxgraphs={}
         #self.labels = []
-        print(f'Building graph from contents of file: ')
-        
+        print(f'Building graph from contents of file: {self.fname}')
         edgesnx=[]
-        self.fpath = os.path.join(self.root, self.fname)
-        with open(self.fpath, 'r') as f:
+        with open(self.fname, 'r') as f:
             content = f.read().strip()
         lines = content.split('\n')  # skip comment line(s)
         n=int(lines[0])
