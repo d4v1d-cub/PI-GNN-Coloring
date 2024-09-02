@@ -26,12 +26,12 @@ def print_all(min_exp, max_exp, c_list, ngraphs_each, seed0, path):
                 print_graph(g, path, filename)
 
 
-s0 = 2
-ng_each = 1
-c_l = [3]
+s0 = 1
+ng_each = 100
+c_l = [2.5, 3.0, 3.5, 4.0, 4.5, 5.0]
 min_e = 5
-max_e = 5
+max_e = 7
 
-path_to_graphs = "./random_graphs/ErdosRenyi"
+path_to_graphs = "/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/random_graphs/ErdosRenyi"
 
 print_all(min_e, max_e, c_l, ng_each, s0, path_to_graphs)
