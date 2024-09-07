@@ -8,7 +8,7 @@ from time import time
 
 
 from Utils_orig_single_cluster import(get_adjacency_matrix, saver, saver_colorings, get_gnn, 
-                               run_gnn_training, SyntheticDataset)
+                               run_gnn_training_early_stop, SyntheticDataset)
 
 
 # fix seed to ensure consistent results
@@ -110,7 +110,7 @@ for i in range(len(data_train)):
                                         hypers, opt_hypers, TORCH_DEVICE, TORCH_DTYPE)
 
         #print(len(nx_graph.nodes()))
-        name,losses,hard_losses,chroms, prob,best_coloring,best_loss,final_coloring,final_loss,epoch_num = run_gnn_training(
+        name,losses,hard_losses,chroms, prob,best_coloring,best_loss,final_coloring,final_loss,epoch_num = run_gnn_training_early_stop(
             hypers['graph_file'], data_train.nxgraphs[i], data_train.graphs[i], adj_, net, embed, 
             optimizer, hypers['number_epochs'], hypers['patience'], hypers['tolerance'], seed=SEED_VALUE)
         names.append(name) #all this cuz sometimes can't be processesd by net and triggers exception, cuzing different lengths.

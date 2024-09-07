@@ -135,11 +135,11 @@ def check_all(N_list, c_list, q, seedmin, seedmax, path_to_graph, path_to_cols,
     fout.close()
 
 
-N_list = [32, 64, 128]
+N_list = [32, 64, 128, 256]
 c_list = [2.5, 3.0, 3.5, 4.0, 4.5, 5.0]
 q = 3
 seedmin = 1
-seedmax = 100
+seedmax = 201
 model = "GraphSAGE"
 embdim = 80
 hiddim = 80

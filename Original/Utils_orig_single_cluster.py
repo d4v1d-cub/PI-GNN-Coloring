@@ -474,3 +474,125 @@ def run_gnn_training(graphname, nx_graph, graph_dgl, adj_mat, net, embed, optimi
     print(f'Final coloring: {final_coloring}, soft loss: {final_loss:.3f}, chromatic_number: {torch.max(coloring)+1}')
     
     return graphname, losses, hard_losses, chroms, probs, best_coloring, best_loss.item(), final_coloring, final_loss, epoch 
+
+
+def run_gnn_training_early_stop(graphname, nx_graph, graph_dgl, adj_mat, net, embed, optimizer,
+                                number_epochs=int(1e5), patience=1000, tolerance=1e-4, seed=1):
+    t_start = time()
+
+    """
+    Function to run model training for given graph, GNN, optimizer, and set of hypers.
+    Includes basic early stopping criteria. Prints regular updates on progress as well as
+    final decision.
+    :param nx_graph: Graph instance to solve
+    :param graph_dgl: Graph instance to solve
+    :param adj_mat: Adjacency matrix for provided graph
+    :type adj_mat: torch.tensor
+    :param net: GNN instance to train
+    :type net: GNN_Conv or GNN_SAGE
+    :param embed: Initial embedding layer
+    :type embed: torch.nn.Embedding
+    :param optimizer: Optimizer instance used to fit model parameters
+    :type optimizer: torch.optim.AdamW
+    :param number_epochs: Limit on number of training epochs to run
+    :type number_epochs: int
+    :param patience: Number of epochs to wait before triggering early stopping
+    :type patience: int
+    :param tolerance: Minimum change in cost to be considered non-converged (i.e.
+        any change less than tolerance will add to early stopping count)
+    :type tolerance: float
+    :return: Final model probabilities, best color vector found during training, best loss found during training,
+    final color vector of training, final loss of training, number of epochs used in training
+    :rtype: torch.tensor, torch.tensor, torch.tensor, torch.tensor, torch.tensor, int
+    """
+    losses=[]
+    chroms=[]
+    hard_losses=[]
+    # Ensure RNG seeds are reset each training run
+    print(f'Function run_gnn_training(): Setting seed to {seed}')
+    set_seed(seed)
+
+    inputs = embed.weight
+
+    # Tracking
+    best_cost = torch.tensor(float('Inf'))  # high initialization
+    best_loss = torch.tensor(float('Inf'))
+    best_coloring = None
+
+    # Early stopping to allow NN to train to near-completion
+    prev_loss = 1.  # initial loss value (arbitrary)
+    cnt = 0  # track number times early stopping is triggered
+
+    # Training logic
+    epoch = 0
+    while epoch < number_epochs and best_cost > 0.5:
+        # get soft prob assignments
+        logits = net(graph_dgl, inputs)
+        # apply softmax for normalization
+        probs = F.softmax(logits, dim=1)
+
+        coloring = torch.argmax(probs, dim=1)
+        #print(len(coloring))
+        # get cost value with POTTS cost function
+        #weight_classes=weight_classes_orig*factor
+        loss = loss_func_mod(probs, adj_mat)
+
+        # get cost based on current hard class assignments
+        # update cost if applicable
+
+        cost_hard = loss_func_color_hard(coloring, nx_graph)
+        
+        #if cost_hard.item()==0 or cost_hard.item()==1:
+        #    weight_classes=weight_classes_orig #if it's already 0 (or 1), challenge the net to explore low occupancy colours encodings.
+            #(by annulling the flattening of weights proportional to the earliness)
+        
+        if cost_hard < best_cost:
+            best_loss = loss
+            best_cost = cost_hard
+            best_coloring = coloring
+        
+        # Early stopping check
+        # If loss increases or change in loss is too small, trigger
+        
+        if (abs(loss - prev_loss) <= tolerance) | ((loss - prev_loss) > 0):
+            cnt += 1
+        else:
+            cnt = 0
+        # print(f'epoch: {epoch}, cost_hard.item(): {cost_hard.item()}')
+        
+        losses.append(loss.item())
+        hard_losses.append(cost_hard.item())
+        chroms.append((torch.max(coloring)+1).item())
+        '''
+        if cost_hard.item()==0:#epoch>=int(2e3) and 
+            print('Epoch %d | Soft Loss: %.5f | Discrete Cost: %.5f | calculated ChroNu: %d | ChroNu: %d' % (epoch, loss.item(), cost_hard.item(), torch.max(coloring)+1, chromatic_numbers[graphname]))
+            break
+        '''
+        # if cost_hard.item()==0:
+        #     print("0 reached")
+
+        # update loss tracking
+        prev_loss = loss
+
+        if cnt >= patience:
+            print(f'Stopping early on epoch {epoch}. Patience count: {cnt}')
+            break
+
+        # run optimization with backpropagation
+        optimizer.zero_grad()  # clear gradient for step
+        loss.backward()  # calculate gradient through compute graph
+        optimizer.step()  # take step, update weights
+
+        # tracking: print intermediate loss at regular interval
+        if epoch % 500 == 0:
+            print(f'Epoch {epoch} | Soft Loss: {loss.item():.5f}  | ChroNu: {torch.max(coloring)+1} | time: {round(time() - t_start, 4)} | Discrete Cost:{cost_hard.item()}')
+        epoch += 1
+    # Print final loss
+    print('Epoch %d | Final loss: %.5f | Lowest discrete cost: %.5f' % (epoch, loss.item(), best_cost))
+
+    # Final coloring
+    final_loss = loss
+    final_coloring = torch.argmax(probs, 1)
+    print(f'Final coloring: {final_coloring}, soft loss: {final_loss:.3f}, chromatic_number: {torch.max(coloring)+1}')
+    
+    return graphname, losses, hard_losses, chroms, probs, best_coloring, best_loss.item(), final_coloring, final_loss, epoch 
