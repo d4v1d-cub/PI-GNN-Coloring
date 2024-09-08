@@ -44,8 +44,8 @@ for k, fname in enumerate(os.listdir(path_to_files)):
 print('Dataset ready\n')
 
 
-space = (hp.quniform('embdim', 10, 300, 1), hp.quniform('hiddim', 10, 300, 1), 
-        hp.uniform('dout', 0, 0.5), hp.uniform('lrate', 0, 0.2))
+space = (hp.quniform('embdim', 10, 250, 1), hp.quniform('hiddim', 10, 250, 1), 
+        hp.uniform('dout', 0.1, 0.4), hp.uniform('lrate', 0, 0.2))
 
 def train_all(embdim, hiddim, dout, lrate):
     # Sample hyperparameters

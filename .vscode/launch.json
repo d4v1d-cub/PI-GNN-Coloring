@@ -60,11 +60,11 @@
             "args": [
                 "3",
                 "Original/data/train",
-                "1e2",
+                "1e3",
                 "GraphSAGE",
                 "100",
                 "Original/best",
-                "best_params_q_3_N_128_nepochs_1e2_model_GraphSAGE_ntrials_100.txt"
+                "best_params_q_3_N_128_nepochs_1e3_model_GraphSAGE_ntrials_100.txt"
             ]
         }
     ]
