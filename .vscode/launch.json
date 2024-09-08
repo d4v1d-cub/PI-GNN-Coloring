@@ -1,0 +1,68 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "gen_graphs_cluster",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "./gen_graphs_cluster.py",
+            "console": "integratedTerminal",
+            "args": [
+                "1",
+                "10",
+                "3",
+                "16",
+                "./Original/data/train"
+            ]
+        },
+        {
+            "name": "MainColor_orig",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "./Original/MainColor_orig.py",
+            "console": "integratedTerminal",
+            "args": [
+                "3",
+                "Original/data/train",
+                "1e3",
+                "Original/losses",
+                "Original/chroms",
+                "Original/colorings"
+            ]
+        },
+        {
+            "name": "MainColor_orig_single",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "./Original/MainColor_orig_single.py",
+            "console": "integratedTerminal",
+            "args": [
+                "3",
+                "Original/data/train/ErdosRenyi_N_16_c_3.000_seed_1.txt",
+                "1e4",
+                "Original/losses",
+                "Original/chroms",
+                "Original/colorings",
+                "GraphSAGE",
+                "80",
+                "80"
+            ]
+        },
+        {
+            "name": "MainColor_orig_hyperopt",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "./Original/MainColor_orig_hyperopt.py",
+            "console": "integratedTerminal",
+            "args": [
+                "3",
+                "Original/data/train/",
+                "1e2",
+                "GraphSAGE"
+            ]
+        }
+    ]
+}

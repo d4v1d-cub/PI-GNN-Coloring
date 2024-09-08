@@ -6,7 +6,7 @@ import sys
 from time import time
 
 
-from Utils_orig_cluster import(get_adjacency_matrix, saver, saver_colorings, get_gnn, 
+from Utils_orig import(get_adjacency_matrix, saver, saver_colorings, get_gnn, 
                                run_gnn_training, SyntheticDataset)
 
 
@@ -23,12 +23,12 @@ print(f'Will use device: {TORCH_DEVICE}, torch dtype: {TORCH_DTYPE}')
 
 
 # Specify the problem instance to solve and where to find the dataset(s) here:
-q = 3
-TrPath = "Original/data/train"
-nepochs = int(1e5)
-path_loss = "Original/losses"
-path_chroms = "Original/chroms"
-path_colorings = "Original/colorings"
+q = int(sys.argv[1])
+TrPath = sys.argv[2]
+nepochs = int(float(sys.argv[3]))
+path_loss = sys.argv[4]
+path_chroms = sys.argv[5]
+path_colorings = sys.argv[6]
 n_data=10000
 data_train = SyntheticDataset(TrPath, n_data, q)
 print('Dataset ready\n')

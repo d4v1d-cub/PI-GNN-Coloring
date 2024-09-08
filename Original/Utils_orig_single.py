@@ -106,22 +106,14 @@ def find_disc_nodes(edges_nx, n):
 
 
 class SyntheticDataset(DGLDataset):
-    def __init__(self, fname, stop, q, node_offset=-1):
-        self.stop=stop-2
+    def __init__(self, fname, q, node_offset=-1):
         self.fname=fname
         self.node_offset=node_offset
         self.chr_n = q
         super().__init__(name="synthetic")
 
     def process(self):
-        self.graphs = []
-        self.nxgraphs=[]
-        #self.labels = []
-        self.fnames=[]
-        self.all_chr_ns=[]
-        self.nx_orig=[]
-        
-        self.fnames.append(self.fname)
+
         print(f'Building graph from contents of file: {self.fname}')
         with open(self.fname, 'r') as f:
             content = f.read().strip()
@@ -141,23 +133,13 @@ class SyntheticDataset(DGLDataset):
         nx_clean.remove_nodes_from(list(nx.isolates(nx_clean)))
         nx_clean = nx.convert_node_labels_to_integers(nx_clean)
 
-        self.nx_orig.append(nx_orig)
-        self.nxgraphs.append(nx_clean)
+        self.nx_orig = nx_orig
+        self.nxgraph = nx_clean
         dgl_graph = dgl.from_networkx(nx_clean, device=dev)        
-        self.graphs.append(dgl_graph)
+        self.graph = dgl_graph
 
         if len(lines) == nedges+3:
-            self.all_chr_ns.append(int(lines[nedges+2]))
-        else:
-            self.all_chr_ns.append(self.chr_n)
-            
-            
-    def __getitem__(self, i):
-        return self.graphs[i]
-
-
-    def __len__(self):
-        return len(self.graphs)
+            self.chr_n = int(lines[nedges+2])
 
 
 # Define GNN GraphSage object

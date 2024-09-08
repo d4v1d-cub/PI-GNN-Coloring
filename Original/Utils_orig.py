@@ -15,42 +15,6 @@ dev = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 import matplotlib.pyplot as plt
 from time import time
 
-# Known chromatic numbers for specified problems (from references)
-chromatic_numbers = {
-    # COLOR graphs
-    'jean.col': 10,
-    'anna.col': 11,
-    'huck.col': 11,
-    'david.col': 11,
-    'homer.col': 13,
-    'myciel2.col': 3,
-    'myciel3.col': 4,
-    'myciel4.col': 5, #io
-    'myciel5.col': 6,
-    'myciel6.col': 7,
-    'queen5_5.col': 5,
-    'queen6_6.col': 7,
-    'queen7_7.col': 7,
-    'queen8_8.col': 9,
-    'queen9_9.col': 10,
-    'queen8_12.col': 12,
-    'queen11_11.col': 11,
-    'queen12_12.col': 12, #io
-    'queen13_13.col': 13,
-    'le450_5a.col': 5,#io from here
-    'le450_5b.col': 5,#
-    'le450_5c.col': 5,#
-    'le450_5d.col': 5,#
-    'le450_15a.col': 15,#
-    'le450_15b.col': 15,#
-    'le450_15c.col': 15,#
-    'le450_15d.col': 15,#to here
-    # Citations graphs
-    'cora.cites': 5,
-    'citeseer.cites': 6,
-    'pubmed.cites': 8
-}
-
 
 def set_seed(seed):
     """
@@ -83,120 +47,70 @@ def get_adjacency_matrix(nx_graph, torch_device, torch_dtype):
 
     return adj_
 
-def saver(lista1, name, type, lista2=0): #IGNORE
+
+def saver(lista1, path, name, type, lista2=0): #IGNORE
     if type=='loss':
         print(f'saving {type} of {name}')
-        path="./losses"
         # Write-Overwrites
         file1 = open(f'{path}/{name}.txt', "w")  # write mode
         file1.write(str([ [ epoch_i, float("{0:.4f}".format(lista1[epoch_i])), float("{0:.4f}".format(lista2[epoch_i])) ]for epoch_i in range(len(lista1)) ]))
         file1.close()
     if type=='chroma':
         print(f'saving {type} of {name}')
-        cpath="./chroms"
         # Write-Overwrites
-        file2 = open(f'{cpath}/{name}.txt', "w")  # write mode
+        file2 = open(f'{path}/{name}.txt', "w")  # write mode
         file2.write(str([[epoch_i, int(lista1[epoch_i]) ]for epoch_i in range(len(lista1))]))
         file2.close()
-    if type=='coloring':
-        print(f'saving {type} of {name}')
-        colpath='./colorings'
-        file3 = open(f'{colpath}/{name}.txt', "w")  # write mode
-        file3.write(str([lista1[i].item() for i in range(len(lista1))])+'\n')#best coloring
-        file3.write(str([lista2[i].item() for i in range(len(lista1))])+'\n')#final coloring
-        file3.close()
-
-def plotter(graphname, n_nodes, best_cost, best_loss): #IGNORE
-    myfile=open(f'./losses/{graphname}.txt')
-    myline=myfile.readline()
-    b=[i for i in myline[2:-2].split('], [')] #[2:-2] to avoid [[ or ]] accolled to 1st or last entry.
-    myfile.close()
-    a=[b[i].split(', ') for i in range(len(b))]
-    #print(a)
-
-    cfile=open(f'./chroms/{graphname}.txt')
-    mycline=cfile.readline()
-    ep_chrs=[i for i in mycline[2:-2].split('], [')] #[2:-2] to avoid [[ or ]] accolled to 1st or last entry.
-    chrs=[ep_chrs[i].split(', ') for i in range(len(ep_chrs))]
-    
-    cfile.close()
-
-    print(f'plotting losses of {graphname}')
-    fig,ax=plt.subplots()
-
-    plt.subplot(2,1,2)
-    plt.xlabel('epochs')    
-    epochs=[int(a[i][0]) for i in range(len(a))]
-    plt.plot(epochs, [0.0 for _ in range(len(a))], color='black')
-    plt.plot(epochs, [float(a[i][1]) for i in range(len(a))], color='blue', label='loss')
-    plt.plot(epochs, [float(a[i][2]) for i in range(len(a))], color='navy', label='hard loss')
-    plt.plot(epochs, [best_cost for _ in range(len(a))], '--', color='navy', linewidth=0.3, label='best hard loss')
-    plt.plot(epochs, [best_loss for _ in range(len(a))], '--', color='blue', linewidth=0.3, label='best loss')
-    plt.legend()
-    
-    print(f'plotting predicted chromatic numbers of {graphname}')
-    plt.subplot(2,1,1)
-    plt.xlabel('epochs')
-    plt.plot(epochs, [int(chrs[i][1]) for i in range(len(chrs))], color='orange', label='pred chromatic number')
-    if chromatic_numbers[graphname] is not None:
-        plt.plot(epochs, [chromatic_numbers[graphname] for _ in range(len(chrs))], '--', color='red', label='chromatic number')
-    plt.legend()
-
-    fig.suptitle(f'{graphname}, {n_nodes} nodes')
-    fig.savefig(f'./losses/{graphname}.png')
-
-def plotter_g(name, graph): #IGNORE
-    graphs=[graph, graph]
-    colors=[]
-    mycolfile=open(f'./colorings/{name}.txt')
-    mycolines=mycolfile.readlines()
-    mycolfile.close()
-    g_i=0
-    for line in mycolines:
-        coloring=[int(i) for i in line[1:-2].split(', ')]#[1:-2] cuz each line has \n at the end in addition to ']'.
-        #print(f'g_i: {g_i}')
-        #print(f'graphs[g_i].edges: {graphs[g_i].edges}')
-        for i, j in list(graphs[g_i].edges):
-            #print(f'i,j: {i,j}')
-            #print(f'(i,j): {(i,j)}, colors: {(coloring[i], coloring[j])}')
-            if coloring[i]==coloring[j]:
-                graphs[g_i].edges[i, j]['color'] = 'red'
-        colors.append( nx.get_edge_attributes(graphs[g_i],'color').values() )
-        g_i+=1
-
-    fig,ax=plt.subplots(1,2)
-    print(f'drawing coloured graph for {name}')
-    for i in range(g_i):
-        plt.subplot(1,2,i+1)
-        nx.draw(graphs[i], node_color=coloring, edge_color = colors[i], node_size=30, with_labels = True, width=0.4)#, with_labels=True, node_color=color_map[i])
-        fig.set_facecolor('dimgrey')
-    fig.suptitle(f'{name}, {len(graph.nodes())} nodes')
-    fig.savefig(f'./colorings/{name}.png')
 
 
-def parse_line(file_line, node_offset):
-    """
-    Helper function to parse lines out of COLOR files - skips first character, which
-    will be an "e" to denote an edge definition, and returns node0, node1 that define
-    the edge in the line.
-    :param file_line: Line to be parsed
-    :type file_line: str
-    :param node_offset: How much to add to account for file numbering (i.e. offset by 1)
-    :type node_offset: int
-    :return: Set of nodes connected by edge defined in the line (i.e. node_from, node_to)
-    :rtype: int, int
-    """
 
-    x, y = file_line.split(' ')[1:]  # skip first character - specifies each line is an edge definition
-    x, y = int(x)+node_offset, int(y)+node_offset  # nodes in file are 1-indexed, whereas python is 0-indexed
+def saver_colorings(best_colors, path, name, nx_graph, final_colors):
+    best_colors_new = []
+    final_colors_new = []
+    isol = list(nx.isolates(nx_graph))
+    offset = 0
+    for i in range(nx_graph.number_of_nodes()):
+        if i in isol:
+            best_colors_new.append(0)
+            final_colors_new.append(0)
+            offset += 1
+        else:
+            best_colors_new.append(best_colors[i - offset].item())
+            final_colors_new.append(final_colors[i - offset].item())
+
+    print(f'saving colors of {name}')
+    file3 = open(f'{path}/{name}.txt', "w")  # write mode
+    file3.write(str([best_colors_new[i] for i in range(len(best_colors_new))])+'\n')#best coloring
+    file3.write(str([final_colors_new[i] for i in range(len(final_colors_new))])+'\n')#final coloring
+    file3.close()
+
+
+def parse_line(file_line, node_offset=0):
+    x, y = [int(x) for x in file_line.split()]
+    x, y = x+node_offset, y+node_offset  # nodes in file are 1-indexed, whereas python is 0-indexed
     return x, y
 
 
+def find_disc_nodes(edges_nx, n):
+    all_nodes = []
+    for edge in edges_nx:
+        if edge[0] not in all_nodes:
+            all_nodes.append(edge[0])
+        if edge[1] not in all_nodes:
+            all_nodes.append(edge[1])
+    missing = []
+    for i in range(n):
+        if i not in all_nodes:
+            missing.append(i)
+    return missing
+
+
 class SyntheticDataset(DGLDataset):
-    def __init__(self, root, stop, node_offset=-1):
+    def __init__(self, root, stop, q, node_offset=-1):
         self.stop=stop-2
         self.root=root
         self.node_offset=node_offset
+        self.chr_n = q
         super().__init__(name="synthetic")
 
     def process(self):
@@ -204,6 +118,8 @@ class SyntheticDataset(DGLDataset):
         self.nxgraphs=[]
         #self.labels = []
         self.fnames=[]
+        self.all_chr_ns=[]
+        self.nx_orig=[]
         for k, fname in enumerate(os.listdir(self.root)):
             self.fnames.append(fname)
             self.fpath = os.path.join(self.root, fname)
@@ -211,22 +127,31 @@ class SyntheticDataset(DGLDataset):
             with open(self.fpath, 'r') as f:
                 content = f.read().strip()
 
-            # Identify where problem definition starts.
-            # All lines prior to this are assumed to be miscellaneous descriptions of file contents
-            # which start with "c ".
-            start_idx = [idx for idx, line in enumerate(content.split('\n')) if line.startswith('p')][0]
-            lines = content.split('\n')[start_idx:]  # skip comment line(s)
-            edges = [parse_line(line, self.node_offset) for line in lines[1:] if len(line) > 0]
+            lines = content.split('\n')  # skip comment line(s)
+            n=int(lines[0])
+            nedges=int(lines[1])
+            edgesnx=[parse_line(line, self.node_offset) for line in lines[2:nedges+2]]
+            
+            nx_orig = nx.Graph()
+            for i in range(n):
+                nx_orig.add_node(i)
+            for edge in edgesnx:
+                nx_orig.add_edge(edge[0], edge[1])
 
-            nx_temp = nx.from_edgelist(edges)
+            nx_clean = nx_orig.copy()
+            nx_clean.remove_nodes_from(list(nx.isolates(nx_clean)))
+            nx_clean = nx.convert_node_labels_to_integers(nx_clean)
 
-            # nx_graph = nx.OrderedGraph()
-            nx_graph = nx.Graph()
-            nx_graph.add_nodes_from(sorted(nx_temp.nodes()))
-            nx_graph.add_edges_from(nx_temp.edges, color='blue')
-            self.nxgraphs.append(nx_graph)
-            dgl_graph = dgl.from_networkx(nx_graph, device=dev)        
+            self.nx_orig.append(nx_orig)
+            self.nxgraphs.append(nx_clean)
+            dgl_graph = dgl.from_networkx(nx_clean, device=dev)        
             self.graphs.append(dgl_graph)
+
+            if len(lines) == nedges+3:
+                self.all_chr_ns.append(int(lines[nedges+2]))
+            else:
+                self.all_chr_ns.append(self.chr_n)
+            
             if k > self.stop:
                 break # store only #graphs = Batch_size 
 
@@ -343,9 +268,7 @@ class GNNConv(nn.Module):
 
 # Construct graph to learn on #
 # Construct graph to learn on #
-def get_gnn(name, g, n_nodes, gnn_hypers, opt_params, torch_device, torch_dtype):
-    if name not in chromatic_numbers.keys():
-        chromatic_numbers[name] = 'unknown'
+def get_gnn(q, name, g, n_nodes, gnn_hypers, opt_params, torch_device, torch_dtype):
     """
     Helper function to load in GNN object, optimizer, and initial embedding layer.
     :param n_nodes: Number of nodes in graph
@@ -377,7 +300,7 @@ def get_gnn(name, g, n_nodes, gnn_hypers, opt_params, torch_device, torch_dtype)
     agg_type = gnn_hypers['layer_agg_type'] or 'mean'
 
     # instantiate the GNN
-    print(f'Building {model} model for graph {name}, chrom number: {chromatic_numbers[name]}...')
+    print(f'Building {model} model for graph {name}, chrom number: {q}...')
     if model == "GraphConv":
         net = GNNConv(dim_embedding, hidden_dim, number_classes, dropout)
     elif model == "GraphSAGE":
@@ -440,8 +363,6 @@ def run_gnn_training(graphname, nx_graph, graph_dgl, adj_mat, net, embed, optimi
                      number_epochs=int(1e5), patience=1000, tolerance=1e-4, seed=1):
     t_start = time()
 
-    if graphname not in chromatic_numbers.keys():
-        chromatic_numbers[graphname] = 'unknown'
     """
     Function to run model training for given graph, GNN, optimizer, and set of hypers.
     Includes basic early stopping criteria. Prints regular updates on progress as well as
