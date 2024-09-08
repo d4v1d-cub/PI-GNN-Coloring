@@ -6,8 +6,7 @@ import os
 from hyperopt import hp, fmin, tpe
 
 
-from Utils_orig_single import(get_adjacency_matrix, saver, saver_colorings, get_gnn, 
-                               run_gnn_training, SyntheticDataset)
+from Utils_orig_hyperopt import(get_adjacency_matrix, get_gnn, run_gnn_training, SyntheticDataset)
 
 
 # fix seed to ensure consistent results
@@ -27,6 +26,11 @@ q = int(sys.argv[1])
 path_to_files = sys.argv[2]
 nepochs = int(float(sys.argv[3]))
 model = sys.argv[4]
+max_evals = int(sys.argv[5])
+
+path_to_out = sys.argv[6]
+fileout = sys.argv[7]
+fname_out = f'{path_to_out}/{fileout}'
 
 filenames = []
 all_data_train = []
@@ -34,7 +38,8 @@ all_data_train = []
 for k, fname in enumerate(os.listdir(path_to_files)):
     print(f'Reading file: "{fname}"')
     filenames.append(fname)
-    all_data_train.append(SyntheticDataset(fname, q))
+    fread = f'{path_to_files}/{fname}'
+    all_data_train.append(SyntheticDataset(fread, q))
 
 print('Dataset ready\n')
 
@@ -112,11 +117,17 @@ def train_all(embdim, hiddim, dout, lrate):
 
 def objective(args):
     embdim, hiddim, dout, lrate = args
-    return train_all(embdim, hiddim, dout, lrate)
+    embdim = int(embdim)
+    hiddim = int(hiddim)
+    print(f'\nWith parameters\n embdim={embdim}\thiddim={hiddim}\tdout={dout}\tlrate={lrate}')
+    loss = train_all(embdim, hiddim, dout, lrate)
+    print(f'loss = {loss}\n')
+    return loss
 
 
-best = fmin(objective, space=space, algo=tpe.suggest, max_evals=100)
+best = fmin(objective, space=space, algo=tpe.suggest, max_evals=max_evals)
 
-print(best)
-
-
+fout = open(fname_out, "w")
+fout.write("# embdim   hiddim   dropout  learn_rate\n")
+fout.write(f'{int(best["embdim"])}\t{int(best["hiddim"])}\t{best["dout"]}\t{best["lrate"]}\n')
+fout.close()

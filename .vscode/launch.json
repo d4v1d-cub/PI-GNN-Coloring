@@ -59,9 +59,12 @@
             "console": "integratedTerminal",
             "args": [
                 "3",
-                "Original/data/train/",
+                "Original/data/train",
                 "1e2",
-                "GraphSAGE"
+                "GraphSAGE",
+                "4",
+                "Original/best",
+                "best_params_q_3_N_16_nepochs_1e2_model_GraphSAGE_ntrials_4.txt"
             ]
         }
     ]
