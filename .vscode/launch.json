@@ -14,7 +14,7 @@
                 "1",
                 "10",
                 "3",
-                "16",
+                "128",
                 "./Original/data/train"
             ]
         },
@@ -62,9 +62,9 @@
                 "Original/data/train",
                 "1e2",
                 "GraphSAGE",
-                "4",
+                "100",
                 "Original/best",
-                "best_params_q_3_N_16_nepochs_1e2_model_GraphSAGE_ntrials_4.txt"
+                "best_params_q_3_N_128_nepochs_1e2_model_GraphSAGE_ntrials_100.txt"
             ]
         }
     ]

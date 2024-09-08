@@ -406,8 +406,5 @@ def run_gnn_training(graphname, nx_graph, graph_dgl, adj_mat, net, embed, optimi
     # Print final loss
     print('Epoch %d | Final loss: %.5f | Lowest discrete cost: %.5f' % (epoch, loss.item(), best_cost))
 
-    # Final coloring
-    final_loss = loss
-    final_coloring = torch.argmax(probs, 1)
     
-    return graphname, losses, hard_losses, chroms, probs, best_coloring, best_loss.item(), final_coloring, final_loss, epoch
+    return best_cost

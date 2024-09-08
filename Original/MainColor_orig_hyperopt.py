@@ -104,15 +104,16 @@ def train_all(embdim, hiddim, dout, lrate):
                                             all_data_train[j].graph, all_data_train[j].nxgraph.number_of_nodes(), 
                                             hypers, opt_hypers, TORCH_DEVICE, TORCH_DTYPE)
 
-            name,losses,hard_losses,chroms, prob,best_coloring,best_loss,final_coloring,final_loss,epoch_num = run_gnn_training(
-                    hypers['graph_file'], all_data_train[j].nxgraph, all_data_train[j].graph, adj_, net, embed, 
-                    optimizer, hypers['number_epochs'], hypers['patience'], hypers['tolerance'], seed=SEED_VALUE)
+            best_cost = run_gnn_training(hypers['graph_file'], all_data_train[j].nxgraph, 
+                                         all_data_train[j].graph, adj_, net, embed, 
+                                         optimizer, hypers['number_epochs'], hypers['patience'], 
+                                         hypers['tolerance'], seed=SEED_VALUE)
             
-            cumul_loss += np.sum(hard_losses)
+            cumul_loss += best_cost
             
         except IndexError:
             print(f'index error for graph {all_data_train[j].fname}')
-    return cumul_loss
+    return float(cumul_loss)
     
 
 def objective(args):
