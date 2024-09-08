@@ -28,11 +28,10 @@ q = int(sys.argv[1])
 filename = sys.argv[2]
 nepochs = int(float(sys.argv[3]))
 path_loss = sys.argv[4]
-path_chroms = sys.argv[5]
-path_colorings = sys.argv[6]
-model = sys.argv[7]
-emb_dim = int(sys.argv[8])
-hid_dim = int(sys.argv[9])
+path_colorings = sys.argv[5]
+model = sys.argv[6]
+emb_dim = int(sys.argv[7])
+hid_dim = int(sys.argv[8])
 
 filename_without_ext = os.path.splitext(os.path.basename(filename))[0]
 
