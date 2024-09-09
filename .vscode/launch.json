@@ -41,14 +41,12 @@
             "console": "integratedTerminal",
             "args": [
                 "3",
-                "Original/data/train/ErdosRenyi_N_16_c_3.000_seed_1.txt",
+                "Original/data/train/ErdosRenyi_N_128_c_3.000_seed_1.txt",
                 "1e4",
                 "Original/losses",
-                "Original/chroms",
                 "Original/colorings",
                 "GraphSAGE",
-                "80",
-                "80"
+                "Original/best/best_params_q_3_N_128_c_3.0_model_GraphSAGE_nepochs_1e2_ngraphs_20_ntrials_250.txt"
             ]
         },
         {
