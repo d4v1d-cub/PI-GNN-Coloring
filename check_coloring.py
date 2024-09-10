@@ -135,20 +135,54 @@ def check_all(N_list, c_list, q, seedmin, seedmax, path_to_graph, path_to_cols,
     fout.close()
 
 
+def read_params(fileparams):
+    fpar = open(fileparams, "r")
+    fpar.readline()
+    line = fpar.readline().split()
+    fpar.close()
+    return int(line[0]), int(line[1]), float(line[2]), float(line[3])
+
+
+def check_all_hyperopt(N_list, c_list, q, seedmin, seedmax, path_to_graph, path_to_cols, 
+                       model, fileout, path_to_params, nep_hyper, ngr_hyper, 
+                       ntr_hyper):
+    fout = open(fileout, "w")
+    fout.write("# N  c  nsamples  solved\n")
+    for N in N_list:
+        path_to_graph_new = path_to_graph + f'N_{N}'
+        for c in c_list:
+            nsamples = 0
+            solved = 0.0
+            fileparams = f'{path_to_params}/best_params_q_{q}_N_{N}_c_{c}_model_{model}_nepochs_{nep_hyper}_ngraphs_{ngr_hyper}_ntrials_{ntr_hyper}.txt'
+            embdim, hiddim, dout, lrate = read_params(fileparams)
+            for seed in range(seedmin, seedmax + 1):
+                graphname = f'ErdosRenyi_N_{N}_c_{"{0:.3f}".format(c)}_seed_{seed}.txt'
+                filecols = f'{path_to_cols}/coloring_q_{q}_model_{model}_embdim_{embdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_filename_{graphname}'
+                colored, found = check_orig(filecols, path_to_graph_new, graphname, q)
+                solved += colored
+                nsamples += found
+            if nsamples > 0:
+                fout.write(str(N) + "\t" + str(c) + "\t" + str(nsamples) + "\t" + str(solved / nsamples) + "\n")
+    fout.close()
+
+
 N_list = [32, 64, 128, 256]
 c_list = [2.5, 3.0, 3.5, 4.0, 4.5, 5.0]
 q = 3
 seedmin = 1
 seedmax = 201
 model = "GraphSAGE"
-embdim = 80
-hiddim = 80
 
 path_to_graph = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/random_graphs/ErdosRenyi/'
-path_to_cols = "/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/colorings"
+path_to_cols = "/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Opt_params/colorings"
 
-path_out = "/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Stats/"
-fileout = path_out + f'Solved_q_{q}_ErdosRenyi_model_{model}_embdim_{embdim}_hiddim_{hiddim}.txt'
+path_to_params = "/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/hyperopt"
+nep_hyper = "1e2"
+ngr_hyper = 20
+ntr_hyper = 250
 
-solv_frac = check_all(N_list, c_list, q, seedmin, seedmax, path_to_graph, path_to_cols,
-                       model, embdim, hiddim, fileout)
+path_out = "/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Opt_params/Stats/"
+fileout = path_out + f'Solved_q_{q}_ErdosRenyi_model_{model}_nephyp_{nep_hyper}_ngrhyp_{ngr_hyper}_ntrhyp_{ntr_hyper}.txt'
+
+solv_frac = check_all_hyperopt(N_list, c_list, q, seedmin, seedmax, path_to_graph, path_to_cols,
+                               model, fileout, path_to_params, nep_hyper, ngr_hyper, ntr_hyper)
