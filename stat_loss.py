@@ -97,8 +97,8 @@ def process_files_opt_pars(N_list, c_list, q, seedmin, seedmax, path_to_loss,
 
 
 # N_list = [32, 64, 128, 256]
-N_list = [64, 128, 256]
-c_list = [2.5, 3.0, 3.5, 4.0, 4.5, 5.0]
+N_list = [256]
+c_list = [3.5, 4.0, 4.5, 5.0]
 q = 3
 seedmin = 1
 seedmax = 201
