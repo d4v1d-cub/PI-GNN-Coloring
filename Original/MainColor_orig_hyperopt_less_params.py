@@ -28,8 +28,11 @@ nepochs = int(float(sys.argv[3]))
 model = sys.argv[4]
 max_evals = int(sys.argv[5])
 
-path_to_out = sys.argv[6]
-fileout = sys.argv[7]
+dout = float(sys.argv[6])
+lrate = float(sys.argv[7])
+
+path_to_out = sys.argv[8]
+fileout = sys.argv[9]
 fname_out = f'{path_to_out}/{fileout}'
 
 filenames = []
@@ -44,27 +47,26 @@ for k, fname in enumerate(os.listdir(path_to_files)):
 print('Dataset ready\n')
 
 
-space = (hp.quniform('embdim', 10, 200, 1), hp.quniform('hiddim', 10, 80, 1), 
-        hp.uniform('dout', 0.15, 0.45), hp.uniform('lrate', 0.01, 0.12))
+space = (hp.quniform('dim', 10, 200, 1))
 
-def train_all(embdim, hiddim, dout, lrate):
+def train_all(dim):
     # Sample hyperparameters
     if model == 'GraphConv':  # example with CPU
         hypers = {
             'model': 'GraphConv',   # set either with 'GraphConv' or 'GraphSAGE'. It cannot take other input
-            'dim_embedding': embdim,
+            'dim_embedding': dim,
             'dropout': dout,
             'learning_rate': lrate,
-            'hidden_dim': hiddim,
+            'hidden_dim': dim,
             'seed': SEED_VALUE
         }
     elif model == 'GraphSAGE':                           # example with GPU
         hypers = {
             'model': 'GraphSAGE',
-            'dim_embedding': embdim,
+            'dim_embedding': dim,
             'dropout': dout,
             'learning_rate': lrate,
-            'hidden_dim': hiddim,
+            'hidden_dim': dim,
             'seed': SEED_VALUE
         }
     else:
@@ -116,12 +118,10 @@ def train_all(embdim, hiddim, dout, lrate):
     return float(cumul_loss)
     
 
-def objective(args):
-    embdim, hiddim, dout, lrate = args
-    embdim = int(embdim)
-    hiddim = int(hiddim)
-    print(f'\nWith parameters\n embdim={embdim}\thiddim={hiddim}\tdout={dout}\tlrate={lrate}')
-    loss = train_all(embdim, hiddim, dout, lrate)
+def objective(dim):
+    dim = int(dim)
+    print(f'\nWith parameters\n dim={dim}\thiddim={dim}\tdout={dout}\tlrate={lrate}')
+    loss = train_all(dim)
     print(f'loss = {loss}\n')
     return loss
 
@@ -130,5 +130,5 @@ best = fmin(objective, space=space, algo=tpe.suggest, max_evals=max_evals)
 
 fout = open(fname_out, "w")
 fout.write("# embdim   hiddim   dropout  learn_rate\n")
-fout.write(f'{int(best["embdim"])}\t{int(best["hiddim"])}\t{best["dout"]}\t{best["lrate"]}\n')
+fout.write(f'{int(best["dim"])}\t{int(best["dim"])}\t{dout}\t{lrate}\n')
 fout.close()

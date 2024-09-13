@@ -1,6 +1,8 @@
 import networkx as nx
 import os
 import sys
+import numpy as np
+import random
 
 
 def print_graph(graph, path, filename):
@@ -18,9 +20,11 @@ def print_graph(graph, path, filename):
 
 
 def print_all(n, c, ngraphs_each, seed0, path):
-    for seed in range(seed0, seed0 + ngraphs_each):
-        g = nx.erdos_renyi_graph(n, c / (n - 1), seed=seed)
-        filename = f'ErdosRenyi_N_{n}_c_{"{0:.3f}".format(c)}_seed_{seed}.txt'
+    random.seed(seed0)
+    np.random.seed(seed0)
+    for id in range(ngraphs_each):
+        g = nx.erdos_renyi_graph(n, c / (n - 1))
+        filename = f'ErdosRenyi_N_{n}_c_{"{0:.3f}".format(c)}_id_{id}.txt'
         print_graph(g, path, filename)
 
 
