@@ -7,7 +7,7 @@ import os
 from time import time
 
 
-from Utils_orig_single import(get_adjacency_matrix, saver, saver_colorings, get_gnn, 
+from Utils_orig_single import(get_adjacency_matrix, saver_loss, saver_colorings, get_gnn, 
                                run_gnn_training_early_stop, SyntheticDataset)
 
 
@@ -130,7 +130,7 @@ try:
 
     loss_filename = "loss_" + str_file
     cols_filename = "coloring_" + str_file
-    saver(losses, path_loss, loss_filename, "loss", hard_losses)
+    saver_loss(losses, path_loss, loss_filename, hard_losses)
     saver_colorings(best_coloring, path_colorings, cols_filename, data_train.nx_orig, final_coloring)
 
 except IndexError:

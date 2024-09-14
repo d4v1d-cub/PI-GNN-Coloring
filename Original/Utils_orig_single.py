@@ -48,19 +48,18 @@ def get_adjacency_matrix(nx_graph, torch_device, torch_dtype):
     return adj_
 
 
-def saver(lista1, path, name, type, lista2=0): #IGNORE
-    if type=='loss':
-        print(f'saving {type} of {name}')
-        # Write-Overwrites
-        file1 = open(f'{path}/{name}.txt', "w")  # write mode
-        file1.write(str([ [ epoch_i, float("{0:.4f}".format(lista1[epoch_i])), float("{0:.4f}".format(lista2[epoch_i])) ]for epoch_i in range(len(lista1)) ]))
-        file1.close()
-    if type=='chroma':
-        print(f'saving {type} of {name}')
-        # Write-Overwrites
-        file2 = open(f'{path}/{name}.txt', "w")  # write mode
-        file2.write(str([[epoch_i, int(lista1[epoch_i]) ]for epoch_i in range(len(lista1))]))
-        file2.close()
+def saver_loss(lista1, path, name, lista2): #IGNORE
+    print(f'saving {type} of {name}')
+    # Write-Overwrites
+    file1 = open(f'{path}/{name}.txt', "w")  # write mode
+    epoch_i = 0
+    while epoch_i < min(100, len(lista1)):
+        file1.write(f'{epoch_i}\t{"{0:.4f}".format(lista1[epoch_i])}\t{"{0:.4f}".format(lista2[epoch_i])}\n')
+        epoch_i += 1
+    while epoch_i < len(lista1):
+        file1.write(f'{epoch_i}\t{"{0:.4f}".format(lista1[epoch_i])}\t{"{0:.4f}".format(lista2[epoch_i])}\n')
+        epoch_i = int(epoch_i * 1.02)
+    file1.close()
 
 
 
