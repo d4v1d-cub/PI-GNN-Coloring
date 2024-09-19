@@ -21,6 +21,18 @@ TORCH_DTYPE = torch.float32
 print(f'Will use device: {TORCH_DEVICE}, torch dtype: {TORCH_DTYPE}')
 
 
+def read_av_params(fileavparams):
+    fp = open(fileavparams, "r")
+    fp.readline()
+    fp.readline()
+    line = fp.readline().split()
+    dout = float(line[1])
+    line = fp.readline().split()
+    lrate = float(line[1])
+    fp.close()
+    return dout, lrate
+
+
 # Specify the problem instance to solve and where to find the dataset(s) here:
 q = int(sys.argv[1])
 path_to_files = sys.argv[2]
@@ -28,11 +40,12 @@ nepochs = int(float(sys.argv[3]))
 model = sys.argv[4]
 max_evals = int(sys.argv[5])
 
-dout = float(sys.argv[6])
-lrate = float(sys.argv[7])
+fileavparams = sys.argv[6]
+dout, lrate = read_av_params(fileavparams)
+print(dout, lrate)
 
-path_to_out = sys.argv[8]
-fileout = sys.argv[9]
+path_to_out = sys.argv[7]
+fileout = sys.argv[8]
 fname_out = f'{path_to_out}/{fileout}'
 
 filenames = []

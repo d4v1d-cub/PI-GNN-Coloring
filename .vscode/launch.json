@@ -64,6 +64,23 @@
                 "Original/best",
                 "best_params_q_3_N_128_nepochs_1e3_model_GraphSAGE_ntrials_100.txt"
             ]
+        },
+        {
+            "name": "MainColor_orig_hyperopt_only_dim",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "./Original/MainColor_orig_hyperopt_only_dim.py",
+            "console": "integratedTerminal",
+            "args": [
+                "3",
+                "Original/data/train",
+                "1e2",
+                "GraphSAGE",
+                "100",
+                "/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/hyperopt/opt_all/Average_params_q_3_ErdosRenyi_model_GraphSAGE_nephyp_1e2_ngrhyp_20_ntrhyp_1000.txt",
+                "Original/best",
+                "best_params_q_3_N_128_nepochs_1e3_model_GraphSAGE_ntrials_100.txt"
+            ]
         }
     ]
 }
