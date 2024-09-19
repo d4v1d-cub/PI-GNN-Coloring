@@ -63,7 +63,7 @@ def process_files_opt_pars(N_list, c_list, q, seedmin, seedmax, path_to_loss,
             embdim, hiddim, dout, lrate = read_params(fileparams)
             
             for seed in range(seedmin, seedmax + 1):
-                graphname = f'ErdosRenyi_N_{N}_c_{"{0:.3f}".format(c)}_seed_{seed}.txt'
+                graphname = f'ErdosRenyi_N_{N}_c_{"{0:.3f}".format(c)}_id_{seed}.txt'
                 filein = f'{path_to_loss}/loss_q_{q}_model_{model}_embdim_{embdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_filename_{graphname}'
                 try:
                     fin = open(filein, "r")
