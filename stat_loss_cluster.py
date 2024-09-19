@@ -106,7 +106,7 @@ maxniter = int(1e5)
 
 path_to_loss = "./losses"
 
-path_out = "../Stats/"
+path_out = "./Stats"
 
 path_to_params = "/home/destevez/Documents/Cristina/David/PI_GNN/best_params/opt_all"
 nep_hyper = "1e2"
