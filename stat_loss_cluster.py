@@ -59,7 +59,7 @@ def process_files_opt_pars(N_list, c_list, q, seedmin, seedmax, path_to_loss,
             nsamples = 0
             all_soft = [[] for i in range(maxniter)]
             all_hard = [[] for i in range(maxniter)]
-            fileparams = f'{path_to_params}/best_params_q_{q}_N_{N}_c_{c}_model_{model}_nepochs_{nep_hyper}_ngraphs_{ngr_hyper}_ntrials_{ntr_hyper}.txt'
+            fileparams = f'{path_to_params}/best_params_q_{q}_N_{N}_c_{"{0:.2f}".format(c)}_model_{model}_nepochs_{nep_hyper}_ngraphs_{ngr_hyper}_ntrials_{ntr_hyper}.txt'
             embdim, hiddim, dout, lrate = read_params(fileparams)
             
             for seed in range(seedmin, seedmax + 1):
@@ -78,7 +78,7 @@ def process_files_opt_pars(N_list, c_list, q, seedmin, seedmax, path_to_loss,
                 except (IOError, OSError):
                     print(f'file  "{filein}"  not read')
             if nsamples > 0:
-                fileout = f'{path_out}/Loss_Stat_q_{q}_N_{N}_c_{c}_model_{model}_embdim_{embdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_nsamples_{nsamples}.txt'
+                fileout = f'{path_out}/Loss_Stat_q_{q}_N_{N}_c_{"{0:.2f}".format(c)}_model_{model}_embdim_{embdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_nsamples_{nsamples}.txt'
                 fout = open(fileout, "w")
                 fout.write("# iter  av(soft_loss)  min(soft_loss)  av(hard_loss)  min(hard_loss)  \n")
                 for i in range(len(all_soft)):
