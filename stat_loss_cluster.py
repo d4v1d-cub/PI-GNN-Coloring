@@ -96,24 +96,23 @@ def process_files_opt_pars(N_list, c_list, q, seedmin, seedmax, path_to_loss,
                 fout.close()
 
 
-# N_list = [32, 64, 128, 256]
-N_list = [256]
-c_list = [3.5, 4.0, 4.5, 5.0]
+N_list = [16, 32, 64, 128, 256]
+c_list = np.arange(2.96, 5.00, 0.18)
 q = 3
 seedmin = 1
 seedmax = 201
 model = "GraphSAGE"
 maxniter = int(1e5)
 
-path_to_cols = "/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Opt_params/losses"
+path_to_loss = "./losses"
 
-path_out = "/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Opt_params/Stats/"
+path_out = "../Stats/"
 
-path_to_params = "/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/hyperopt"
+path_to_params = "/home/destevez/Documents/Cristina/David/PI_GNN/best_params/opt_all"
 nep_hyper = "1e2"
 ngr_hyper = 20
-ntr_hyper = 250
+ntr_hyper = 1000
 
 
-solv_frac = process_files_opt_pars(N_list, c_list, q, seedmin, seedmax, path_to_cols,
+solv_frac = process_files_opt_pars(N_list, c_list, q, seedmin, seedmax, path_to_loss,
                                    model, path_out, maxniter, path_to_params, nep_hyper, ngr_hyper, ntr_hyper)
