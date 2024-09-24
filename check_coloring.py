@@ -154,7 +154,8 @@ def check_all_hyperopt(N_list, c_list, q, seedmin, seedmax, path_to_graph, path_
         for c in c_list:
             nsamples = 0
             solved = 0.0
-            fileparams = f'{path_to_params}/best_params_q_{q}_N_{N}_c_{"{0:.2f}".format(c)}_model_{model}_nepochs_{nep_hyper}_ngraphs_{ngr_hyper}_ntrials_{ntr_hyper}.txt'
+            # fileparams = f'{path_to_params}/best_params_q_{q}_N_{N}_c_{"{0:.2f}".format(c)}_model_{model}_nepochs_{nep_hyper}_ngraphs_{ngr_hyper}_ntrials_{ntr_hyper}.txt'
+            fileparams = f'{path_to_params}/best_params_only_dim_q_{q}_N_{N}_model_{model}_nepochs_{nep_hyper}_ngraphs_{ngr_hyper}_ntrials_{ntr_hyper}.txt'
             embdim, hiddim, dout, lrate = read_params(fileparams)
             for seed in range(seedmin, seedmax + 1):
                 graphname = f'ErdosRenyi_N_{N}_c_{"{0:.3f}".format(c)}_id_{seed}.txt'
@@ -169,21 +170,20 @@ def check_all_hyperopt(N_list, c_list, q, seedmin, seedmax, path_to_graph, path_
 
 N_list = [16, 32, 64, 128, 256]
 c_list = np.arange(2.96, 5.01, 0.18)
-# c_list = [2.5, 3.0, 3.5, 4.0, 4.5, 5.0]
 q = 3
 seedmin = 1
 seedmax = 201
 model = "GraphSAGE"
 
 path_to_graph = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/random_graphs/ErdosRenyi/'
-path_to_cols = "/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Opt_params/colorings"
+path_to_cols = "/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Opt_params/opt_dim/colorings"
 
-path_to_params = "/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/hyperopt/opt_all"
+path_to_params = "/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/hyperopt/opt_dim"
 nep_hyper = "1e2"
-ngr_hyper = 20
-ntr_hyper = 1000
+ngr_hyper = 4
+ntr_hyper = 500
 
-path_out = "/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Opt_params/Stats/"
+path_out = "/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Opt_params/opt_dim/Stats/"
 fileout = path_out + f'Solved_q_{q}_ErdosRenyi_model_{model}_nephyp_{nep_hyper}_ngrhyp_{ngr_hyper}_ntrhyp_{ntr_hyper}.txt'
 
 solv_frac = check_all_hyperopt(N_list, c_list, q, seedmin, seedmax, path_to_graph, path_to_cols,
