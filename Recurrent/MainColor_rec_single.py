@@ -100,7 +100,7 @@ try:
         # report results
     print(f'GNN runtime: {runtime_gnn}s')
 
-    str_file = f'recursive_q_{data_train.chr_n}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_filename_{filename_without_ext}'
+    str_file = f'recurrent_q_{data_train.chr_n}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_filename_{filename_without_ext}'
 
     loss_filename = "loss_" + str_file
     cols_filename = "coloring_" + str_file
