@@ -7,8 +7,8 @@ import os
 from time import time
 
 
-from Utils_orig_single import(get_adjacency_matrix, saver_loss, saver_colorings, get_gnn, 
-                               run_gnn_training_early_stop, SyntheticDataset)
+from Utils_rec_single import(get_adjacency_matrix, saver_loss, saver_colorings, get_gnn, 
+                             run_gnn_training_early_stop, SyntheticDataset)
 
 
 # fix seed to ensure consistent results
@@ -36,14 +36,13 @@ filename = sys.argv[2]
 nepochs = int(float(sys.argv[3]))
 path_loss = sys.argv[4]
 path_colorings = sys.argv[5]
-model = sys.argv[6]
 
-fileparams = sys.argv[7]
+fileparams = sys.argv[6]
 
-embdim, hiddim, dout, lrate = read_params(fileparams)
+randdim, hiddim, dout, lrate = read_params(fileparams)
 
 print("Parameters are:")
-print(f'embdim={embdim}   hiddim={hiddim}    dout={dout}    lrate={lrate}')
+print(f'randdim={randdim}   hiddim={hiddim}    dout={dout}    lrate={lrate}')
 
 filename_without_ext = os.path.splitext(os.path.basename(filename))[0]
 
@@ -51,30 +50,16 @@ data_train = SyntheticDataset(filename, q)
 print('Dataset ready\n')
 
 
-# Sample hyperparameters
-if model == 'GraphConv':  # example with CPU
-    hypers = {
-        'model': 'GraphConv',   # set either with 'GraphConv' or 'GraphSAGE'. It cannot take other input
-        'dim_embedding': embdim,
-        'dropout': dout,
-        'learning_rate': lrate,
-        'hidden_dim': hiddim,
-        'seed': SEED_VALUE
-    }
-elif model == 'GraphSAGE':                           # example with GPU
-    hypers = {
+hypers = {
         'model': 'GraphSAGE',
-        'dim_embedding': embdim,
+        'dim_embedding': randdim + 2 * q,
         'dropout': dout,
         'learning_rate': lrate,
         'hidden_dim': hiddim,
         'seed': SEED_VALUE
-    }
-else:
-    print("The model should be GraphConv or GraphSAGE")
+}
 
 torch.set_printoptions(threshold=3705,linewidth=160)
-
 
 
 # Retrieve known optimizer hypers
@@ -115,7 +100,7 @@ try:
         # report results
     print(f'GNN runtime: {runtime_gnn}s')
 
-    str_file = f'q_{data_train.chr_n}_model_{model}_embdim_{embdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_filename_{filename_without_ext}'
+    str_file = f'recursive_q_{data_train.chr_n}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_filename_{filename_without_ext}'
 
     loss_filename = "loss_" + str_file
     cols_filename = "coloring_" + str_file

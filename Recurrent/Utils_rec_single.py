@@ -2,12 +2,11 @@ import networkx as nx
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.nn import BatchNorm1d as BN1D
 import random
 import numpy as np
-import os
 import dgl
 from dgl.nn.pytorch import SAGEConv
-from dgl.nn.pytorch import GraphConv
 from dgl.data import DGLDataset
 from itertools import chain
 # dev = torch.device('cuda')
@@ -149,7 +148,7 @@ class GNNSage(nn.Module):
     case, just dropout.
     """
 
-    def __init__(self, in_feats, hidden_size, num_classes, dropout, agg_type='mean'):
+    def __init__(self, in_feats, hidden_size, num_classes, dropout):
         """
         Initialize the model object. Establishes model architecture and relevant hypers (`dropout`, `num_classes`, `agg_type`)
         :param g: Input graph object
@@ -170,61 +169,16 @@ class GNNSage(nn.Module):
 
         self.num_classes = num_classes
         
-        self.layers = nn.ModuleList()
-        # input layer
-        self.layers.append(SAGEConv(in_feats, hidden_size, agg_type, activation=F.relu))
-        # output layer
-        self.layers.append(SAGEConv(hidden_size, num_classes, agg_type))
-        self.dropout = nn.Dropout(p=dropout)
-
-    def forward(self, g, features):
-        """
-        Define forward step of netowrk. In this example, pass inputs through convolution, apply relu
-        and dropout, then pass through second convolution.
-        :param features: Input node representations
-        :type features: torch.tensor
-        :return: Final layer representation, pre-activation (i.e. class logits)
-        :rtype: torch.tensor
-        """
-        h = features
-        for i, layer in enumerate(self.layers):
-            if i != 0:
-                h = self.dropout(h)
-            h = layer(g, h)
-
-        return h
-
-
-# Define GNN GraphConv object
-class GNNConv(nn.Module):
-    """
-    Basic GraphConv-based GNN class object. Constructs the model architecture upon
-    initialization. Defines a forward step to include relevant parameters - in this
-    case, just dropout.
-    """
-    
-    def __init__(self, in_feats, hidden_size, num_classes, dropout):
-        """
-        Initialize the model object. Establishes model architecture and relevant hypers (`dropout`, `num_classes`, `agg_type`)
-        :param g: Input graph object
-        :type g: dgl.DGLHeteroGraph
-        :param in_feats: Size (number of nodes) of input layer
-        :type in_feats: int
-        :param hidden_size: Size of hidden layer
-        :type hidden_size: int
-        :param num_classes: Size of output layer (one node per class)
-        :type num_classes: int
-        :param dropout: Dropout fraction, between two convolutional layers
-        :type dropout: float
-        """
+        # input layers
+        self.l1_mean = SAGEConv(in_feats, hidden_size, "mean", activation=F.relu)
+        self.l1_pool = SAGEConv(in_feats, hidden_size, "pool", activation=F.relu)
         
-        super(GNNConv, self).__init__()
-        self.layers = nn.ModuleList()
-        # input layer
-        self.layers.append(GraphConv(in_feats, hidden_size, activation=F.relu))
         # output layer
-        self.layers.append(GraphConv(hidden_size, num_classes))
+        self.outlayer = SAGEConv(hidden_size, num_classes, "mean")
         self.dropout = nn.Dropout(p=dropout)
+
+        self.batch_norm_mean = BN1D(hidden_size)
+        self.batch_norm_pool = BN1D(hidden_size)
 
     def forward(self, g, features):
         """
@@ -235,18 +189,24 @@ class GNNConv(nn.Module):
         :return: Final layer representation, pre-activation (i.e. class logits)
         :rtype: torch.tensor
         """
-            
         h = features
-        for i, layer in enumerate(self.layers):
-            if i != 0:
-                h = self.dropout(h)
-            h = layer(g, h)
+
+        hmean = self.l1_mean(g, h)
+        hpool = self.l1_pool(g, h)
+
+        hmean = self.batch_norm_mean(hmean)
+        hpool = self.batch_norm_pool(hpool)
+
+        h = F.relu(hmean + hpool)
+        h = self.dropout(h)
+        h = self.outlayer(g, h)
+
         return h
 
 
 # Construct graph to learn on #
 # Construct graph to learn on #
-def get_gnn(q, name, g, n_nodes, gnn_hypers, opt_params, torch_device, torch_dtype):
+def get_gnn(q, name, n_nodes, gnn_hypers, opt_params, torch_device, torch_dtype):
     """
     Helper function to load in GNN object, optimizer, and initial embedding layer.
     :param n_nodes: Number of nodes in graph
@@ -275,26 +235,20 @@ def get_gnn(q, name, g, n_nodes, gnn_hypers, opt_params, torch_device, torch_dty
     hidden_dim = gnn_hypers['hidden_dim']
     dropout = gnn_hypers['dropout']
     number_classes = gnn_hypers['number_classes']
-    agg_type = gnn_hypers['layer_agg_type'] or 'mean'
 
     # instantiate the GNN
     print(f'Building {model} model for graph {name}, chrom number: {q}...')
-    if model == "GraphConv":
-        net = GNNConv(dim_embedding, hidden_dim, number_classes, dropout)
-    elif model == "GraphSAGE":
-        net = GNNSage(dim_embedding, hidden_dim, number_classes, dropout, agg_type)
-    else:
-        raise ValueError("Invalid model type input! Model type has to be in one of these two options: ['GraphConv', 'GraphSAGE']")
-
+    net = GNNSage(dim_embedding, hidden_dim, number_classes, dropout)
+    
     net = net.type(torch_dtype).to(torch_device)
     embed = nn.Embedding(n_nodes, dim_embedding)
     embed = embed.type(torch_dtype).to(torch_device)
 
     # set up Adam optimizer
-    params = chain(net.parameters(), embed.parameters())
+    # params = chain(net.parameters())
 
     print(f'Building ADAM-W optimizer for graph {name}...')
-    optimizer = torch.optim.AdamW(params, **opt_params, weight_decay=1e-2)
+    optimizer = torch.optim.AdamW(net.parameters(), **opt_params, weight_decay=1e-2)
 
     return net, embed, optimizer
 
@@ -335,126 +289,6 @@ def loss_func_color_hard(coloring, nx_graph):
         cost_ += 1*(coloring[u] == coloring[v])*(u != v) #for self loops loss func not to be incremented obv.
 
     return cost_
-
-
-def run_gnn_training(graphname, nx_graph, graph_dgl, adj_mat, net, embed, optimizer,
-                     number_epochs=int(1e5), patience=1000, tolerance=1e-4, seed=1):
-    t_start = time()
-
-    """
-    Function to run model training for given graph, GNN, optimizer, and set of hypers.
-    Includes basic early stopping criteria. Prints regular updates on progress as well as
-    final decision.
-    :param nx_graph: Graph instance to solve
-    :param graph_dgl: Graph instance to solve
-    :param adj_mat: Adjacency matrix for provided graph
-    :type adj_mat: torch.tensor
-    :param net: GNN instance to train
-    :type net: GNN_Conv or GNN_SAGE
-    :param embed: Initial embedding layer
-    :type embed: torch.nn.Embedding
-    :param optimizer: Optimizer instance used to fit model parameters
-    :type optimizer: torch.optim.AdamW
-    :param number_epochs: Limit on number of training epochs to run
-    :type number_epochs: int
-    :param patience: Number of epochs to wait before triggering early stopping
-    :type patience: int
-    :param tolerance: Minimum change in cost to be considered non-converged (i.e.
-        any change less than tolerance will add to early stopping count)
-    :type tolerance: float
-    :return: Final model probabilities, best color vector found during training, best loss found during training,
-    final color vector of training, final loss of training, number of epochs used in training
-    :rtype: torch.tensor, torch.tensor, torch.tensor, torch.tensor, torch.tensor, int
-    """
-    losses=[]
-    chroms=[]
-    hard_losses=[]
-    # Ensure RNG seeds are reset each training run
-    print(f'Function run_gnn_training(): Setting seed to {seed}')
-    set_seed(seed)
-
-    inputs = embed.weight
-
-    # Tracking
-    best_cost = torch.tensor(float('Inf'))  # high initialization
-    best_loss = torch.tensor(float('Inf'))
-    best_coloring = None
-
-    # Early stopping to allow NN to train to near-completion
-    prev_loss = 1.  # initial loss value (arbitrary)
-    cnt = 0  # track number times early stopping is triggered
-
-    # Training logic
-    for epoch in range(number_epochs):
-        # get soft prob assignments
-        logits = net(graph_dgl, inputs)
-        # apply softmax for normalization
-        probs = F.softmax(logits, dim=1)
-
-        coloring = torch.argmax(probs, dim=1)
-        #print(len(coloring))
-        # get cost value with POTTS cost function
-        #weight_classes=weight_classes_orig*factor
-        loss = loss_func_mod(probs, adj_mat)
-
-        # get cost based on current hard class assignments
-        # update cost if applicable
-
-        cost_hard = loss_func_color_hard(coloring, nx_graph)
-        
-        #if cost_hard.item()==0 or cost_hard.item()==1:
-        #    weight_classes=weight_classes_orig #if it's already 0 (or 1), challenge the net to explore low occupancy colours encodings.
-            #(by annulling the flattening of weights proportional to the earliness)
-        
-        if cost_hard < best_cost:
-            best_loss = loss
-            best_cost = cost_hard
-            best_coloring = coloring
-        
-        # Early stopping check
-        # If loss increases or change in loss is too small, trigger
-        
-        if (abs(loss - prev_loss) <= tolerance) | ((loss - prev_loss) > 0):
-            cnt += 1
-        else:
-            cnt = 0
-        # print(f'epoch: {epoch}, cost_hard.item(): {cost_hard.item()}')
-        
-        losses.append(loss.item())
-        hard_losses.append(cost_hard.item())
-        chroms.append((torch.max(coloring)+1).item())
-        '''
-        if cost_hard.item()==0:#epoch>=int(2e3) and 
-            print('Epoch %d | Soft Loss: %.5f | Discrete Cost: %.5f | calculated ChroNu: %d | ChroNu: %d' % (epoch, loss.item(), cost_hard.item(), torch.max(coloring)+1, chromatic_numbers[graphname]))
-            break
-        '''
-        # if cost_hard.item()==0:
-        #     print("0 reached")
-
-        # update loss tracking
-        prev_loss = loss
-
-        if cnt >= patience:
-            print(f'Stopping early on epoch {epoch}. Patience count: {cnt}')
-            break
-
-        # run optimization with backpropagation
-        optimizer.zero_grad()  # clear gradient for step
-        loss.backward()  # calculate gradient through compute graph
-        optimizer.step()  # take step, update weights
-
-        # tracking: print intermediate loss at regular interval
-        if epoch % 500 == 0:
-            print(f'Epoch {epoch} | Soft Loss: {loss.item():.5f}  | ChroNu: {torch.max(coloring)+1} | time: {round(time() - t_start, 4)} | Discrete Cost:{cost_hard.item()}')
-    # Print final loss
-    print('Epoch %d | Final loss: %.5f | Lowest discrete cost: %.5f' % (epoch, loss.item(), best_cost))
-
-    # Final coloring
-    final_loss = loss
-    final_coloring = torch.argmax(probs, 1)
-    print(f'Final coloring: {final_coloring}, soft loss: {final_loss:.3f}, chromatic_number: {torch.max(coloring)+1}')
-    
-    return graphname, losses, hard_losses, chroms, probs, best_coloring, best_loss.item(), final_coloring, final_loss, epoch 
 
 
 def run_gnn_training_early_stop(graphname, nx_graph, graph_dgl, adj_mat, net, embed, optimizer,
@@ -563,6 +397,10 @@ def run_gnn_training_early_stop(graphname, nx_graph, graph_dgl, adj_mat, net, em
         optimizer.zero_grad()  # clear gradient for step
         loss.backward()  # calculate gradient through compute graph
         optimizer.step()  # take step, update weights
+
+        # Rebuild input parameters for recurrence
+        to_recur = torch.concatenate(logits, probs)
+        input[specify_part] = to_recur
 
         # tracking: print intermediate loss at regular interval
         if epoch % 500 == 0:
