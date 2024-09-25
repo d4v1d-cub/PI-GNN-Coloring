@@ -50,7 +50,7 @@ print('Dataset ready\n')
 
 hypers = {
         'model': 'GraphSAGE',
-        'dim_embedding': randdim + 2 * q,
+        'dim_embedding': randdim + 2 * data_train.chr_n,
         'dim_rand_input': randdim,
         'dropout': dout,
         'learning_rate': lrate,
