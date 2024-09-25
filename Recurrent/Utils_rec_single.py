@@ -83,8 +83,8 @@ def saver_colorings(best_colors, path, name, nx_graph, final_colors):
 
 
 def saver_time(runtime, path, name):
-    file3 = open(f'{path}/{name}.txt', "w")  # write mode
-    file3.write(str(runtime))#best coloring
+    file3 = open(f'{path}/{name}.txt', "w")
+    file3.write(str(runtime))
     file3.close()
 
 

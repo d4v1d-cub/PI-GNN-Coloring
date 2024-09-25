@@ -42,11 +42,14 @@
             "args": [
                 "3",
                 "Original/data/train/ErdosRenyi_N_128_c_3.000_seed_1.txt",
-                "1e4",
+                "2e3",
                 "Original/losses",
                 "Original/colorings",
+                "Original/times",
                 "GraphSAGE",
-                "Original/best/best_params_q_3_N_128_c_3.0_model_GraphSAGE_nepochs_1e2_ngraphs_20_ntrials_250.txt"
+                "Original/best/best_params_q_3_N_128_c_3.0_model_GraphSAGE_nepochs_1e2_ngraphs_20_ntrials_250.txt",
+                "0",
+                "2"
             ]
         },
         {
