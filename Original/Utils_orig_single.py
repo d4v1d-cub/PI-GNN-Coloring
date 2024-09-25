@@ -462,4 +462,4 @@ def run_gnn_training_early_stop(graphname, nx_graph, graph_dgl, adj_mat, net, em
     final_coloring = torch.argmax(probs, 1)
     print(f'Final coloring: {final_coloring}, soft loss: {final_loss:.3f}, chromatic_number: {torch.max(coloring)+1}')
     
-    return graphname, losses, hard_losses, probs, best_coloring, best_loss.item(), final_coloring, final_loss, epoch, best_cost 
+    return graphname, losses, hard_losses, probs, best_coloring, best_loss.item(), final_coloring, final_loss, epoch, best_cost.item()
