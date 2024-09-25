@@ -53,6 +53,7 @@ print('Dataset ready\n')
 hypers = {
         'model': 'GraphSAGE',
         'dim_embedding': randdim + 2 * q,
+        'dim_rand_input': randdim,
         'dropout': dout,
         'learning_rate': lrate,
         'hidden_dim': hiddim,
@@ -87,13 +88,13 @@ try:
 
     # See minimal_utils.py for description. Constructs GNN and optimizer objects from given hypers. 
     # Initializes embedding layer to use as initial model input
-    net, embed, optimizer = get_gnn(data_train.chr_n, data_train.fname, data_train.graph, 
+    net, inputs, optimizer = get_gnn(data_train.chr_n, data_train.fname, 
                                     data_train.nxgraph.number_of_nodes(), hypers, opt_hypers, 
                                     TORCH_DEVICE, TORCH_DTYPE)
 
-    name,losses,hard_losses,chroms, prob,best_coloring,best_loss,final_coloring,final_loss,epoch_num = run_gnn_training_early_stop(
-            hypers['graph_file'], data_train.nxgraph, data_train.graph, adj_, net, embed, 
-            optimizer, hypers['number_epochs'], hypers['patience'], hypers['tolerance'], seed=SEED_VALUE)
+    name,losses,hard_losses, prob,best_coloring,best_loss,final_coloring,final_loss,epoch_num = run_gnn_training_early_stop(
+            hypers['graph_file'], data_train.nxgraph, data_train.graph, adj_, net, inputs, 
+            optimizer, randdim, hypers['number_epochs'], hypers['patience'], hypers['tolerance'], seed=SEED_VALUE)
     
     runtime_gnn = round(time() - t_start, 4)
 

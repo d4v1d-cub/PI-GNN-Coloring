@@ -81,6 +81,21 @@
                 "Original/best",
                 "best_params_q_3_N_128_nepochs_1e3_model_GraphSAGE_ntrials_100.txt"
             ]
+        },
+        {
+            "name": "MainColor_rec_single",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "./Recurrent/MainColor_rec_single.py",
+            "console": "integratedTerminal",
+            "args": [
+                "3",
+                "Original/data/train/ErdosRenyi_N_128_c_3.000_seed_1.txt",
+                "1e4",
+                "Recurrent/losses",
+                "Recurrent/colorings",
+                "Recurrent/params/params_paper_recurrence.txt"
+            ]
         }
     ]
 }

@@ -8,7 +8,6 @@ import numpy as np
 import dgl
 from dgl.nn.pytorch import SAGEConv
 from dgl.data import DGLDataset
-from itertools import chain
 # dev = torch.device('cuda')
 dev = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 import matplotlib.pyplot as plt
@@ -48,7 +47,7 @@ def get_adjacency_matrix(nx_graph, torch_device, torch_dtype):
 
 
 def saver_loss(lista1, path, name, lista2): #IGNORE
-    print(f'saving {type} of {name}')
+    print(f'saving losses in {name}')
     # Write-Overwrites
     file1 = open(f'{path}/{name}.txt', "w")  # write mode
     epoch_i = 0
@@ -76,7 +75,7 @@ def saver_colorings(best_colors, path, name, nx_graph, final_colors):
             best_colors_new.append(best_colors[i - offset].item())
             final_colors_new.append(final_colors[i - offset].item())
 
-    print(f'saving colors of {name}')
+    print(f'saving colors in {name}')
     file3 = open(f'{path}/{name}.txt', "w")  # write mode
     file3.write(str([best_colors_new[i] for i in range(len(best_colors_new))])+'\n')#best coloring
     file3.write(str([final_colors_new[i] for i in range(len(final_colors_new))])+'\n')#final coloring
@@ -235,14 +234,15 @@ def get_gnn(q, name, n_nodes, gnn_hypers, opt_params, torch_device, torch_dtype)
     hidden_dim = gnn_hypers['hidden_dim']
     dropout = gnn_hypers['dropout']
     number_classes = gnn_hypers['number_classes']
+    randdim = gnn_hypers['dim_rand_input']
 
     # instantiate the GNN
     print(f'Building {model} model for graph {name}, chrom number: {q}...')
     net = GNNSage(dim_embedding, hidden_dim, number_classes, dropout)
     
     net = net.type(torch_dtype).to(torch_device)
-    embed = nn.Embedding(n_nodes, dim_embedding)
-    embed = embed.type(torch_dtype).to(torch_device)
+    inputs = torch.randn(n_nodes, dim_embedding, dtype=torch_dtype, device=torch_device)
+    inputs[:, randdim:] = 0
 
     # set up Adam optimizer
     # params = chain(net.parameters())
@@ -250,7 +250,7 @@ def get_gnn(q, name, n_nodes, gnn_hypers, opt_params, torch_device, torch_dtype)
     print(f'Building ADAM-W optimizer for graph {name}...')
     optimizer = torch.optim.AdamW(net.parameters(), **opt_params, weight_decay=1e-2)
 
-    return net, embed, optimizer
+    return net, inputs, optimizer
 
 
 # helper function for graph-coloring loss
@@ -291,8 +291,8 @@ def loss_func_color_hard(coloring, nx_graph):
     return cost_
 
 
-def run_gnn_training_early_stop(graphname, nx_graph, graph_dgl, adj_mat, net, embed, optimizer,
-                                number_epochs=int(1e5), patience=1000, tolerance=1e-4, seed=1):
+def run_gnn_training_early_stop(graphname, nx_graph, graph_dgl, adj_mat, net, inputs, optimizer,
+                                randdim, number_epochs=int(1e5), patience=1000, tolerance=1e-4, seed=1):
     t_start = time()
 
     """
@@ -321,13 +321,10 @@ def run_gnn_training_early_stop(graphname, nx_graph, graph_dgl, adj_mat, net, em
     :rtype: torch.tensor, torch.tensor, torch.tensor, torch.tensor, torch.tensor, int
     """
     losses=[]
-    chroms=[]
     hard_losses=[]
     # Ensure RNG seeds are reset each training run
     print(f'Function run_gnn_training(): Setting seed to {seed}')
     set_seed(seed)
-
-    inputs = embed.weight
 
     # Tracking
     best_cost = torch.tensor(float('Inf'))  # high initialization
@@ -377,7 +374,6 @@ def run_gnn_training_early_stop(graphname, nx_graph, graph_dgl, adj_mat, net, em
         
         losses.append(loss.item())
         hard_losses.append(cost_hard.item())
-        chroms.append((torch.max(coloring)+1).item())
         '''
         if cost_hard.item()==0:#epoch>=int(2e3) and 
             print('Epoch %d | Soft Loss: %.5f | Discrete Cost: %.5f | calculated ChroNu: %d | ChroNu: %d' % (epoch, loss.item(), cost_hard.item(), torch.max(coloring)+1, chromatic_numbers[graphname]))
@@ -399,8 +395,8 @@ def run_gnn_training_early_stop(graphname, nx_graph, graph_dgl, adj_mat, net, em
         optimizer.step()  # take step, update weights
 
         # Rebuild input parameters for recurrence
-        to_recur = torch.concatenate(logits, probs)
-        input[specify_part] = to_recur
+        to_recur = torch.cat((logits, probs), dim=1).detach()
+        inputs[:, randdim:] = to_recur.clone()
 
         # tracking: print intermediate loss at regular interval
         if epoch % 500 == 0:
@@ -414,4 +410,4 @@ def run_gnn_training_early_stop(graphname, nx_graph, graph_dgl, adj_mat, net, em
     final_coloring = torch.argmax(probs, 1)
     print(f'Final coloring: {final_coloring}, soft loss: {final_loss:.3f}, chromatic_number: {torch.max(coloring)+1}')
     
-    return graphname, losses, hard_losses, chroms, probs, best_coloring, best_loss.item(), final_coloring, final_loss, epoch 
+    return graphname, losses, hard_losses, probs, best_coloring, best_loss.item(), final_coloring, final_loss, epoch 
