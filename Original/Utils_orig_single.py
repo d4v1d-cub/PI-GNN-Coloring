@@ -49,7 +49,7 @@ def get_adjacency_matrix(nx_graph, torch_device, torch_dtype):
 
 
 def saver_loss(lista1, path, name, lista2): #IGNORE
-    print(f'saving {type} of {name}')
+    print(f'saving losses on {name}')
     # Write-Overwrites
     file1 = open(f'{path}/{name}.txt', "w")  # write mode
     epoch_i = 0
@@ -77,7 +77,7 @@ def saver_colorings(best_colors, path, name, nx_graph, final_colors):
             best_colors_new.append(best_colors[i - offset].item())
             final_colors_new.append(final_colors[i - offset].item())
 
-    print(f'saving colors of {name}')
+    print(f'saving colors on {name}')
     file3 = open(f'{path}/{name}.txt', "w")  # write mode
     file3.write(str([best_colors_new[i] for i in range(len(best_colors_new))])+'\n')#best coloring
     file3.write(str([final_colors_new[i] for i in range(len(final_colors_new))])+'\n')#final coloring
