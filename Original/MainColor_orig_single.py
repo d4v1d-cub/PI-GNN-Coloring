@@ -7,7 +7,7 @@ import os
 from time import time
 
 
-from Utils_orig_single import(get_adjacency_matrix, saver_loss, saver_colorings, saver_time, get_gnn, 
+from Utils_orig_single import(get_adjacency_matrix, saver_loss, saver_colorings, saver_others, get_gnn, 
                                run_gnn_training_early_stop, SyntheticDataset)
 
 
@@ -30,7 +30,7 @@ filename = sys.argv[2]
 nepochs = int(float(sys.argv[3]))
 path_loss = sys.argv[4]
 path_colorings = sys.argv[5]
-path_times = sys.argv[6]
+path_others = sys.argv[6]
 model = sys.argv[7]
 
 fileparams = sys.argv[8]
@@ -99,6 +99,7 @@ hypers.update(solver_hypers)
 adj_ = get_adjacency_matrix(data_train.nxgraph, TORCH_DEVICE, TORCH_DTYPE)
 
 cond = True
+min_cost = data_train.nxgraph.number_of_edges()
 while hypers['seed'] < init_seed + ntries and cond:
     print("\nTrying seed=", hypers['seed'])
     # See minimal_utils.py for description. Constructs GNN and optimizer objects from given hypers. 
@@ -113,9 +114,12 @@ while hypers['seed'] < init_seed + ntries and cond:
     
     hypers['seed'] += 1
 
-    if best_loss < 0.5:
+    if best_cost < 0.5:
         cond = False
         print("Success with seed=", hypers['seed'] - 1)
+        min_cost = 0
+    elif min_cost > best_cost:
+        min_cost = best_cost
     
 runtime_gnn = round(time() - t_start, 4)
 
@@ -126,7 +130,8 @@ str_file = f'q_{data_train.chr_n}_model_{model}_embdim_{embdim}_hidim_{hiddim}_d
 
 loss_filename = "loss_" + str_file
 cols_filename = "coloring_" + str_file
-time_filename = "times_" + str_file
+others_filename = "others_" + str_file
 saver_loss(losses, path_loss, loss_filename, hard_losses)
 saver_colorings(best_coloring, path_colorings, cols_filename, data_train.nx_orig, final_coloring)
-saver_time(runtime_gnn, path_times, time_filename)
+others = [min_cost.item(), runtime_gnn]
+saver_others(others, path_others, others_filename)

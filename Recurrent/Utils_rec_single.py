@@ -82,9 +82,11 @@ def saver_colorings(best_colors, path, name, nx_graph, final_colors):
     file3.close()
 
 
-def saver_time(runtime, path, name):
+def saver_others(others, path, name):
     file3 = open(f'{path}/{name}.txt', "w")
-    file3.write(str(runtime))
+    file3.write(str(others[0]))
+    for i in range(1, len(others)):
+        file3.write("\t" + str(others[i]))
     file3.close()
 
 

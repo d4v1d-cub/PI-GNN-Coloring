@@ -45,7 +45,7 @@
                 "2e3",
                 "Original/losses",
                 "Original/colorings",
-                "Original/times",
+                "Original/others",
                 "GraphSAGE",
                 "Original/best/best_params_q_3_N_128_c_3.0_model_GraphSAGE_nepochs_1e2_ngraphs_20_ntrials_250.txt",
                 "0",
@@ -97,7 +97,7 @@
                 "2e3",
                 "Recurrent/losses",
                 "Recurrent/colorings",
-                "Recurrent/times",
+                "Recurrent/others",
                 "Recurrent/params/params_paper_recurrence.txt",
                 "0",
                 "2"
