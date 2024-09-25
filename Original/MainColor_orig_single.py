@@ -133,5 +133,5 @@ cols_filename = "coloring_" + str_file
 others_filename = "others_" + str_file
 saver_loss(losses, path_loss, loss_filename, hard_losses)
 saver_colorings(best_coloring, path_colorings, cols_filename, data_train.nx_orig, final_coloring)
-others = [min_cost.item(), runtime_gnn]
+others = [min_cost, runtime_gnn]
 saver_others(others, path_others, others_filename)
