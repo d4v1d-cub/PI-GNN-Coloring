@@ -82,6 +82,12 @@ def saver_colorings(best_colors, path, name, nx_graph, final_colors):
     file3.close()
 
 
+def saver_time(runtime, path, name):
+    file3 = open(f'{path}/{name}.txt', "w")  # write mode
+    file3.write(str(runtime))#best coloring
+    file3.close()
+
+
 def parse_line(file_line, node_offset=0):
     x, y = [int(x) for x in file_line.split()]
     x, y = x+node_offset, y+node_offset  # nodes in file are 1-indexed, whereas python is 0-indexed
@@ -410,4 +416,4 @@ def run_gnn_training_early_stop(graphname, nx_graph, graph_dgl, adj_mat, net, in
     final_coloring = torch.argmax(probs, 1)
     print(f'Final coloring: {final_coloring}, soft loss: {final_loss:.3f}, chromatic_number: {torch.max(coloring)+1}')
     
-    return graphname, losses, hard_losses, probs, best_coloring, best_loss.item(), final_coloring, final_loss, epoch 
+    return graphname, losses, hard_losses, probs, best_coloring, best_loss.item(), final_coloring, final_loss, epoch, best_cost

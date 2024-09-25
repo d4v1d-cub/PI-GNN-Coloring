@@ -90,11 +90,14 @@
             "console": "integratedTerminal",
             "args": [
                 "3",
-                "Original/data/train/ErdosRenyi_N_128_c_3.000_seed_1.txt",
-                "1e4",
+                "Original/data/train/ErdosRenyi_N_128_c_5.000_seed_1.txt",
+                "2e3",
                 "Recurrent/losses",
                 "Recurrent/colorings",
-                "Recurrent/params/params_paper_recurrence.txt"
+                "Recurrent/times",
+                "Recurrent/params/params_paper_recurrence.txt",
+                "0",
+                "2"
             ]
         }
     ]

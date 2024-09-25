@@ -7,15 +7,9 @@ import os
 from time import time
 
 
-from Utils_rec_single import(get_adjacency_matrix, saver_loss, saver_colorings, get_gnn, 
+from Utils_rec_single import(get_adjacency_matrix, saver_loss, saver_colorings, saver_time, get_gnn, 
                              run_gnn_training_early_stop, SyntheticDataset)
 
-
-# fix seed to ensure consistent results
-SEED_VALUE = 0
-random.seed(SEED_VALUE)        # seed python RNG
-np.random.seed(SEED_VALUE)     # seed global NumPy RNG
-torch.manual_seed(SEED_VALUE)  # seed torch RNG
 
 # Set GPU/CPU
 TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -36,8 +30,12 @@ filename = sys.argv[2]
 nepochs = int(float(sys.argv[3]))
 path_loss = sys.argv[4]
 path_colorings = sys.argv[5]
+path_times = sys.argv[6]
 
-fileparams = sys.argv[6]
+fileparams = sys.argv[7]
+
+init_seed = int(sys.argv[8])
+ntries = int(sys.argv[9])
 
 randdim, hiddim, dout, lrate = read_params(fileparams)
 
@@ -57,7 +55,7 @@ hypers = {
         'dropout': dout,
         'learning_rate': lrate,
         'hidden_dim': hiddim,
-        'seed': SEED_VALUE
+        'seed': init_seed
 }
 
 torch.set_printoptions(threshold=3705,linewidth=160)
@@ -69,44 +67,50 @@ opt_hypers = {
 }
 
 t_start = time()
-try:
-    # Default meta parameters
-    solver_hypers = {
-        'tolerance': 1e-3,           # Loss must change by more than tolerance, or add towards patience count
-        'number_epochs': nepochs,   # Max number training steps
-        'patience': 10000,             # Number early stopping triggers before breaking loop
-        'graph_file': data_train.fname,  # Which problem is being solved
-        'layer_agg_type': 'mean',    # How aggregate neighbors sampled within graphSAGE
-        'number_classes': data_train.chr_n  #data_train.GetChrom(i)#
-    }
+
+# Default meta parameters
+solver_hypers = {
+    'tolerance': 1e-3,           # Loss must change by more than tolerance, or add towards patience count
+    'number_epochs': nepochs,   # Max number training steps
+    'patience': 10000,             # Number early stopping triggers before breaking loop
+    'graph_file': data_train.fname,  # Which problem is being solved
+    'layer_agg_type': 'mean',    # How aggregate neighbors sampled within graphSAGE
+    'number_classes': data_train.chr_n  #data_train.GetChrom(i)#
+}
 
         # Combine into a single set
-    hypers.update(solver_hypers)
+hypers.update(solver_hypers)
 
         # Get adjacency matrix for use in calculations
-    adj_ = get_adjacency_matrix(data_train.nxgraph, TORCH_DEVICE, TORCH_DTYPE)
+adj_ = get_adjacency_matrix(data_train.nxgraph, TORCH_DEVICE, TORCH_DTYPE)
 
-    # See minimal_utils.py for description. Constructs GNN and optimizer objects from given hypers. 
-    # Initializes embedding layer to use as initial model input
+cond = True
+while hypers['seed'] < init_seed + ntries and cond:
+    print("\nTrying seed=", hypers['seed'])
     net, inputs, optimizer = get_gnn(data_train.chr_n, data_train.fname, 
                                     data_train.nxgraph.number_of_nodes(), hypers, opt_hypers, 
                                     TORCH_DEVICE, TORCH_DTYPE)
 
-    name,losses,hard_losses, prob,best_coloring,best_loss,final_coloring,final_loss,epoch_num = run_gnn_training_early_stop(
+    name,losses,hard_losses, prob,best_coloring,best_loss,final_coloring,final_loss,epoch_num, best_cost = run_gnn_training_early_stop(
             hypers['graph_file'], data_train.nxgraph, data_train.graph, adj_, net, inputs, 
-            optimizer, randdim, hypers['number_epochs'], hypers['patience'], hypers['tolerance'], seed=SEED_VALUE)
+            optimizer, randdim, hypers['number_epochs'], hypers['patience'], hypers['tolerance'], hypers['seed'])
     
-    runtime_gnn = round(time() - t_start, 4)
+    hypers['seed'] += 1
+
+    if best_loss < 0.5:
+        cond = False
+        print("Success with seed=", hypers['seed'] - 1)
+
+runtime_gnn = round(time() - t_start, 4)
 
         # report results
-    print(f'GNN runtime: {runtime_gnn}s')
+print(f'GNN runtime: {runtime_gnn}s')
 
-    str_file = f'recurrent_q_{data_train.chr_n}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_filename_{filename_without_ext}'
+str_file = f'recurrent_q_{data_train.chr_n}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_filename_{filename_without_ext}'
 
-    loss_filename = "loss_" + str_file
-    cols_filename = "coloring_" + str_file
-    saver_loss(losses, path_loss, loss_filename, hard_losses)
-    saver_colorings(best_coloring, path_colorings, cols_filename, data_train.nx_orig, final_coloring)
-
-except IndexError:
-    print(f'index error for graph {data_train.fname}')
+loss_filename = "loss_" + str_file
+cols_filename = "coloring_" + str_file
+time_filename = "times_" + str_file
+saver_loss(losses, path_loss, loss_filename, hard_losses)
+saver_colorings(best_coloring, path_colorings, cols_filename, data_train.nx_orig, final_coloring)
+saver_time(runtime_gnn, path_times, time_filename)
