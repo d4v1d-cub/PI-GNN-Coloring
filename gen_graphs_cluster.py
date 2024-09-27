@@ -24,7 +24,7 @@ def print_all(n, c, ngraphs_each, seed0, path):
     np.random.seed(seed0)
     for id in range(ngraphs_each):
         g = nx.erdos_renyi_graph(n, c / (n - 1))
-        filename = f'ErdosRenyi_N_{n}_c_{"{0:.3f}".format(c)}_id_{id}.txt'
+        filename = f'ErdosRenyi_N_{n}_c_{"{0:.3f}".format(c)}_id_{id + 1}.txt'
         print_graph(g, path, filename)
 
 
