@@ -2,14 +2,17 @@
 export LC_NUMERIC="en_US.UTF-8"
 
 seed0=1
-ngr_each=200
+ngr_each=400
 
 for exp in 8 7 6 5 4
 do
 
 N=$((2 ** exp))
 
-for c in $(seq 2.96 0.18 5.0)
+# for c in $(seq 2.96 0.18 5.0)
+# do
+
+for c in $(seq 9.1 0.4 13.5)
 do
 
 path='/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/random_graphs/ErdosRenyi/N_'$N

@@ -12,8 +12,8 @@ def print_graph(graph, path, filename):
     if not os.path.exists(f'{path}'):
         os.makedirs(f'{path}')
     fout = open(f'{path}/{filename}', "w")
-    fout.write(f'N\t{graph.number_of_nodes()}\nM\t{graph.number_of_edges()}\n')
-    for i, j in graph.edges():
+    fout.write(f'N\t{graph_to_print.number_of_nodes()}\nM\t{graph_to_print.number_of_edges()}\n')
+    for i, j in graph_to_print.edges():
         fout.write(f'e\t{i+1}\t{j+1}\n')
     fout.close()
 
