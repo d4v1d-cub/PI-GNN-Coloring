@@ -93,7 +93,9 @@ def saver_others(others, path, name):
 
 
 def parse_line(file_line, node_offset=0):
-    x, y = [int(x) for x in file_line.split()]
+    splitted = file_line.split()
+    x = int(splitted[1])
+    y = int(splitted[2])
     x, y = x+node_offset, y+node_offset  # nodes in file are 1-indexed, whereas python is 0-indexed
     return x, y
 
@@ -126,8 +128,8 @@ class SyntheticDataset(DGLDataset):
             content = f.read().strip()
 
         lines = content.split('\n')  # skip comment line(s)
-        n=int(lines[0])
-        nedges=int(lines[1])
+        n=int(lines[0].split()[1])
+        nedges=int(lines[1].split()[1])
         edgesnx=[parse_line(line, self.node_offset) for line in lines[2:nedges+2]]
             
         nx_orig = nx.Graph()

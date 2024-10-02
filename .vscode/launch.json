@@ -92,15 +92,15 @@
             "program": "./Recurrent/MainColor_rec_single.py",
             "console": "integratedTerminal",
             "args": [
-                "3",
-                "Original/data/train/ErdosRenyi_N_128_c_5.000_seed_1.txt",
+                "5",
+                "Original/data/train/ErdosRenyi_N_1024_c_9.100_id_1.txt",
                 "2e3",
                 "Recurrent/losses",
                 "Recurrent/colorings",
                 "Recurrent/others",
                 "Recurrent/params/params_paper_recurrence.txt",
                 "0",
-                "2"
+                "1"
             ]
         }
     ]
