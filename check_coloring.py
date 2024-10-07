@@ -2,8 +2,10 @@ import networkx as nx
 import numpy as np
 
 
-def parse_line(file_line, node_offset=-1):
-    x, y = [int(x) for x in file_line.split()]
+def parse_line(file_line, node_offset=0):
+    splitted = file_line.split()
+    x = int(splitted[1])
+    y = int(splitted[2])
     x, y = x+node_offset, y+node_offset  # nodes in file are 1-indexed, whereas python is 0-indexed
     return x, y
 
@@ -79,8 +81,8 @@ def check_orig(filecols, path_to_graph, graphname, q=3):
         with open(filegraph, 'r') as f:
             content = f.read().strip()
         lines = content.split('\n')
-        n=int(lines[0])
-        nedges=int(lines[1])
+        n=int(lines[0].split()[1])
+        nedges=int(lines[1].split()[1])
         edgesnx=[parse_line(line, -1) for line in lines[2:nedges+2]]
         
         nx_orig = nx.Graph()
@@ -218,22 +220,24 @@ path_to_graph = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Co
 #                                model, fileout, path_to_params, nep_hyper, ngr_hyper, ntr_hyper)
 
 
-N_list = [16, 32, 64, 128, 256]
+N_list = [16, 32, 64, 128, 256, 512, 1024]
 # c_list = np.arange(2.96, 5.01, 0.18)
 # q = 3
 c_list = np.arange(9.1, 13.5, 0.4)
 q = 5
 seedmin = 1
 seedmax = 401
-ntrials = 5
+ntrials = 1
+nepochs = "1e6"
 
 
-path_to_cols = "/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/q_5/colorings"
+# path_to_cols = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/q_{q}/colorings'
+path_to_cols = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/q_{q}/colorings_nep_1e6'
 
 path_to_params = "/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/params"
 
-path_out = "/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/q_5/Stats/"
-fileout = path_out + f'Solved_recurrent_q_{q}_ErdosRenyi_ntrials_{ntrials}.txt'
+path_out = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/q_{q}/Stats/'
+fileout = path_out + f'Solved_recurrent_q_{q}_ErdosRenyi_ntrials_{ntrials}_nep_{nepochs}.txt'
 
 solv_frac = check_all_rec(N_list, c_list, q, seedmin, seedmax, path_to_graph, path_to_cols,
                           fileout, path_to_params, ntrials)
