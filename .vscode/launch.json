@@ -102,6 +102,20 @@
                 "0",
                 "1"
             ]
+        },
+        {
+            "name": "gen_graphs_coloring",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "./gen_graphs_coloring.py",
+            "console": "integratedTerminal",
+            "args": [
+                "1",
+                "2",
+                "2.96",
+                "128",
+                "./"
+            ]
         }
     ]
 }
