@@ -171,7 +171,7 @@ def check_all_hyperopt(N_list, c_list, q, seedmin, seedmax, path_to_graph, path_
 
 
 def check_all_rec(N_list, c_list, q, seedmin, seedmax, path_to_graph, path_to_cols, 
-                  fileout, path_to_params, ntrials):
+                  fileout, path_to_params, ntrials, nepochs):
     fout = open(fileout, "w")
     fout.write("# N  c  nsamples  solved\n")
     for N in N_list:
@@ -182,8 +182,9 @@ def check_all_rec(N_list, c_list, q, seedmin, seedmax, path_to_graph, path_to_co
             fileparams = f'{path_to_params}/params_paper_recurrence.txt'
             randdim, hiddim, dout, lrate = read_params(fileparams)
             for seed in range(seedmin, seedmax + 1):
-                graphname = f'ErdosRenyi_N_{N}_c_{"{0:.3f}".format(c)}_id_{seed}.txt'
-                filecols = f'{path_to_cols}/coloring_recurrent_q_{q}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_ntrials_{ntrials}_filename_{graphname}'
+                m = int(round(N * c / 2))
+                graphname = f'ErdosRenyi_N_{N}_M_{m}_id_{seed}.txt'
+                filecols = f'{path_to_cols}/coloring_recurrent_q_{q}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_ntrials_{ntrials}_nep_{nepochs}_filename_{graphname}'
                 colored, found = check_orig(filecols, path_to_graph_new, graphname, q)
                 solved += colored
                 nsamples += found
@@ -193,14 +194,15 @@ def check_all_rec(N_list, c_list, q, seedmin, seedmax, path_to_graph, path_to_co
 
 
 
-path_to_graph = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/random_graphs/ErdosRenyi/'
-
-
 # FOR ORIGINAL CODE
 
-# N_list = [16, 32, 64, 128, 256]
+# path_to_graph = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/random_graphs/ErdosRenyi/Old_graphs/'
+
+# N_list = [128, 256]
 # c_list = np.arange(2.96, 5.01, 0.18)
 # q = 3
+# # c_list = np.arange(9.1, 13.5, 0.4)
+# # q = 5
 # seedmin = 1
 # seedmax = 201
 
@@ -220,24 +222,29 @@ path_to_graph = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Co
 #                                model, fileout, path_to_params, nep_hyper, ngr_hyper, ntr_hyper)
 
 
-N_list = [16, 32, 64, 128, 256, 512, 1024]
+# FOR RECURRENT CODE
+
+path_to_graph = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/random_graphs/ErdosRenyi/New_graphs/'
+
+
+# N_list = [16, 32, 64, 128, 256, 512, 1024]
+N_list = [128, 256, 512, 1024]
 # c_list = np.arange(2.96, 5.01, 0.18)
 # q = 3
 c_list = np.arange(9.1, 13.5, 0.4)
 q = 5
 seedmin = 1
 seedmax = 401
-ntrials = 1
-nepochs = "1e6"
+ntrials = 5
+nepochs = int(1e5)
 
 
-# path_to_cols = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/q_{q}/colorings'
-path_to_cols = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/q_{q}/colorings_nep_1e6'
+path_to_cols = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/q_{q}/New_graphs/colorings'
 
 path_to_params = "/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/params"
 
-path_out = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/q_{q}/Stats/'
+path_out = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/q_{q}/New_graphs/Stats/'
 fileout = path_out + f'Solved_recurrent_q_{q}_ErdosRenyi_ntrials_{ntrials}_nep_{nepochs}.txt'
 
 solv_frac = check_all_rec(N_list, c_list, q, seedmin, seedmax, path_to_graph, path_to_cols,
-                          fileout, path_to_params, ntrials)
+                          fileout, path_to_params, ntrials, nepochs)

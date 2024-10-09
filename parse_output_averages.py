@@ -1,0 +1,170 @@
+import numpy as np
+
+
+def read_params(fileparams):
+    fpar = open(fileparams, "r")
+    fpar.readline()
+    line = fpar.readline().split()
+    fpar.close()
+    return int(line[0]), int(line[1]), float(line[2]), float(line[3])
+
+
+def read_others(fileothers):
+    try:
+        fin = open(fileothers, "r")
+    except (IOError, OSError):
+        print(f'file "{fileothers}" not read')
+        return -1, -1, False
+    line = fin.readline().split()
+    return int(line[0]), float(line[1]), True
+
+
+def read_loss(fileloss):
+    try:
+        fin = open(fileloss, "r")
+    except (IOError, OSError):
+        print(f'file "{fileloss}" not read')
+        return -1, False
+    while True:
+        j = fin.readline()
+        if not j:
+            break
+        line = j.split()
+    
+    return int(line[0]), True
+
+
+def parse_all_old(N_list, c_list, q, seedmin, seedmax, path_to_others, path_to_losses, 
+                  fileout, path_to_params, ntrials, nepochs):
+    fout = open(fileout, "w")
+    fout.write("# N  c  nsamples  P(sol)   av(E)   std(E)   av(runtime)[s]  std(runtime)[s]    av(nepochs)    std(nepochs)\n")
+    for N in N_list:
+        for c in c_list:
+            nsamples = 0
+            solved = 0.0
+            fileparams = f'{path_to_params}/params_paper_recurrence.txt'
+            randdim, hiddim, dout, lrate = read_params(fileparams)
+            av_e = 0.0
+            av_e_sqr = 0.0
+            av_runtime = 0.0
+            av_runtime_sqr = 0.0
+            av_nep = 0.0
+            av_nep_sqr = 0.0
+            for seed in range(seedmin, seedmax + 1):
+                graphname = f'ErdosRenyi_N_{N}_c_{"{0:.3f}".format(c)}_id_{seed}.txt'
+                fileothers = f'{path_to_others}/others_recurrent_q_{q}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_ntrials_{ntrials}_filename_{graphname}'
+                e, runtime, found = read_others(fileothers)
+                if found:
+                    print(f'file {fileothers} read')
+                    nsamples += 1
+                    if e == 0:
+                        solved += 1
+                    av_e += e
+                    av_e_sqr += e ** 2
+                    av_runtime += runtime
+                    av_runtime_sqr += runtime ** 2
+                    fileloss = f'{path_to_losses}/loss_recurrent_q_{q}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_ntrials_{ntrials}_filename_{graphname}'
+                    nep, found_loss = read_loss(fileloss)
+                    if found_loss:
+                        print(f'file {fileloss} read')
+                        av_nep += nep
+                        av_nep_sqr += nep ** 2
+            if nsamples > 0:
+                av_e /= nsamples
+                av_e_sqr /= nsamples
+                av_runtime /= nsamples
+                av_runtime_sqr /= nsamples
+                av_nep /= nsamples
+                av_nep_sqr /= nsamples
+
+                std_e = np.sqrt((av_e_sqr - av_e * av_e) / nsamples)
+                std_runtime = np.sqrt((av_runtime_sqr - av_runtime * av_runtime) / nsamples)
+                std_nep = np.sqrt((av_nep_sqr - av_nep * av_nep) / nsamples)
+
+                fout.write(str(N) + "\t" + str(c) + "\t" + str(nsamples) + "\t" + str(solved / nsamples) + "\t" + str(av_e) + "\t" + str(std_e)
+                            + "\t" + str(av_runtime) + "\t" + str(std_runtime) + "\t" + str(av_nep) + "\t" + str(std_nep) + "\n")
+    fout.close()
+
+
+def parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others, path_to_losses, 
+              fileout, path_to_params, ntrials, nepochs):
+    fout = open(fileout, "w")
+    fout.write("# N  c  nsamples  P(sol)   av(E)   std(E)   av(runtime)[s]  std(runtime)[s]    av(nepochs)    std(nepochs)\n")
+    for N in N_list:
+        for c in c_list:
+            nsamples = 0
+            solved = 0.0
+            fileparams = f'{path_to_params}/params_paper_recurrence.txt'
+            randdim, hiddim, dout, lrate = read_params(fileparams)
+            av_e = 0.0
+            av_e_sqr = 0.0
+            av_runtime = 0.0
+            av_runtime_sqr = 0.0
+            av_nep = 0.0
+            av_nep_sqr = 0.0
+            for seed in range(seedmin, seedmax + 1):
+                m = int(round(N * c / 2))
+                graphname = f'ErdosRenyi_N_{N}_M_{m}_id_{seed}.txt'
+                fileothers = f'{path_to_others}/others_recurrent_q_{q}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_ntrials_{ntrials}_nep_{nepochs}_filename_{graphname}'
+                e, runtime, found = read_others(fileothers)
+                if found:
+                    print(f'file {fileothers} read')
+                    nsamples += 1
+                    if e == 0:
+                        solved += 1
+                    av_e += e
+                    av_e_sqr += e ** 2
+                    av_runtime += runtime
+                    av_runtime_sqr += runtime ** 2
+                    fileloss = f'{path_to_losses}/loss_recurrent_q_{q}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_ntrials_{ntrials}_nep_{nepochs}_filename_{graphname}'
+                    nep, found_loss = read_loss(fileloss)
+                    if found_loss:
+                        print(f'file {fileloss} read')
+                        av_nep += nep
+                        av_nep_sqr += nep ** 2
+            if nsamples > 0:
+                av_e /= nsamples
+                av_e_sqr /= nsamples
+                av_runtime /= nsamples
+                av_runtime_sqr /= nsamples
+                av_nep /= nsamples
+                av_nep_sqr /= nsamples
+
+                std_e = np.sqrt((av_e_sqr - av_e * av_e) / nsamples)
+                std_runtime = np.sqrt((av_runtime_sqr - av_runtime * av_runtime) / nsamples)
+                std_nep = np.sqrt((av_nep_sqr - av_nep * av_nep) / nsamples)
+
+                fout.write(str(N) + "\t" + str(c) + "\t" + str(nsamples) + "\t" + str(solved / nsamples) + "\t" + str(av_e) + "\t" + str(std_e)
+                            + "\t" + str(av_runtime) + "\t" + str(std_runtime) + "\t" + str(av_nep) + "\t" + str(std_nep) + "\n")
+    fout.close()
+
+
+version = "Old_graphs"
+
+
+N_list = [128, 256, 512, 1024]
+# c_list = np.arange(3.32, 5.01, 0.18)
+# q = 3
+c_list = np.arange(9.1, 13.5, 0.4)
+q = 5
+seedmin = 1
+seedmax = 401
+ntrials = 1
+nepochs = int(1e5)
+
+path_to_graph = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/random_graphs/ErdosRenyi/{version}/'
+
+path_to_others = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/q_{q}/{version}/others'
+path_to_losses = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/q_{q}/{version}/losses'
+
+path_to_params = "/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/params"
+
+path_out = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/q_{q}/{version}/Stats/'
+fileout = path_out + f'Full_Stats_recurrent_q_{q}_ErdosRenyi_ntrials_{ntrials}_nep_{nepochs}.txt'
+
+# parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others, path_to_losses,
+#           fileout, path_to_params, ntrials, nepochs)
+
+
+parse_all_old(N_list, c_list, q, seedmin, seedmax, path_to_others, path_to_losses,
+              fileout, path_to_params, ntrials, nepochs)
