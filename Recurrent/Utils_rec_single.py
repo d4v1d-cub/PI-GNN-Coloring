@@ -8,10 +8,9 @@ import numpy as np
 import dgl
 from dgl.nn.pytorch import SAGEConv
 from dgl.data import DGLDataset
-# dev = torch.device('cuda')
 dev = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-import matplotlib.pyplot as plt
 from time import time
+import psutil
 
 
 def set_seed(seed):
@@ -410,7 +409,9 @@ def run_gnn_training_early_stop(graphname, nx_graph, graph_dgl, adj_mat, net, in
 
         # tracking: print intermediate loss at regular interval
         if epoch % 500 == 0:
-            print(f'Epoch {epoch} | Soft Loss: {loss.item():.5f}  | ChroNu: {torch.max(coloring)+1} | time: {round(time() - t_start, 4)} | Discrete Cost:{cost_hard.item()}')
+            print(f'Epoch {epoch} | Soft Loss: {loss.item():.5f}  | ChroNu: {torch.max(coloring)+1} \
+                   | time: {round(time() - t_start, 4)} | Discrete Cost:{cost_hard.item()} |  CPU Usage: {psutil.cpu_percent()} \
+                   | RAM Usage: {psutil.virtual_memory().used / (1024 ** 3)} GB  |  GPU memory {torch.cuda.memory_allocated(device=dev)}')
         epoch += 1
     # Print final loss
     print('Epoch %d | Final loss: %.5f | Lowest discrete cost: %.5f' % (epoch, loss.item(), best_cost))
