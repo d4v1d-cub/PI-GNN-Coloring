@@ -14,9 +14,9 @@ def read_others(fileothers):
         fin = open(fileothers, "r")
     except (IOError, OSError):
         print(f'file "{fileothers}" not read')
-        return -1, -1, False
+        return -1, -1, -1, False
     line = fin.readline().split()
-    return int(line[0]), float(line[1]), True
+    return int(line[0]), float(line[1]), int(line[3]), True
 
 
 def read_loss(fileloss):
@@ -34,8 +34,8 @@ def read_loss(fileloss):
     return int(line[0]), True
 
 
-def parse_all_old(N_list, c_list, q, seedmin, seedmax, path_to_others, path_to_losses, 
-                  fileout, path_to_params, ntrials, nepochs):
+def parse_all_old(N_list, c_list, q, seedmin, seedmax, path_to_others, 
+                  fileout, path_to_params, ntrials):
     fout = open(fileout, "w")
     fout.write("# N  c  nsamples  P(sol)   av(E)   std(E)   av(runtime)[s]  std(runtime)[s]    av(nepochs)    std(nepochs)\n")
     for N in N_list:
@@ -53,7 +53,7 @@ def parse_all_old(N_list, c_list, q, seedmin, seedmax, path_to_others, path_to_l
             for seed in range(seedmin, seedmax + 1):
                 graphname = f'ErdosRenyi_N_{N}_c_{"{0:.3f}".format(c)}_id_{seed}.txt'
                 fileothers = f'{path_to_others}/others_recurrent_q_{q}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_ntrials_{ntrials}_filename_{graphname}'
-                e, runtime, found = read_others(fileothers)
+                e, runtime, nep, found = read_others(fileothers)
                 if found:
                     print(f'file {fileothers} read')
                     nsamples += 1
@@ -63,12 +63,8 @@ def parse_all_old(N_list, c_list, q, seedmin, seedmax, path_to_others, path_to_l
                     av_e_sqr += e ** 2
                     av_runtime += runtime
                     av_runtime_sqr += runtime ** 2
-                    fileloss = f'{path_to_losses}/loss_recurrent_q_{q}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_ntrials_{ntrials}_filename_{graphname}'
-                    nep, found_loss = read_loss(fileloss)
-                    if found_loss:
-                        print(f'file {fileloss} read')
-                        av_nep += nep
-                        av_nep_sqr += nep ** 2
+                    av_nep += nep
+                    av_nep_sqr += nep ** 2
             if nsamples > 0:
                 av_e /= nsamples
                 av_e_sqr /= nsamples
@@ -86,7 +82,7 @@ def parse_all_old(N_list, c_list, q, seedmin, seedmax, path_to_others, path_to_l
     fout.close()
 
 
-def parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others, path_to_losses, 
+def parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others, 
               fileout, path_to_params, ntrials, nepochs):
     fout = open(fileout, "w")
     fout.write("# N  c  nsamples  P(sol)   av(E)   std(E)   av(runtime)[s]  std(runtime)[s]    av(nepochs)    std(nepochs)\n")
@@ -106,7 +102,7 @@ def parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others, path_to_losse
                 m = int(round(N * c / 2))
                 graphname = f'ErdosRenyi_N_{N}_M_{m}_id_{seed}.txt'
                 fileothers = f'{path_to_others}/others_recurrent_q_{q}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_ntrials_{ntrials}_nep_{nepochs}_filename_{graphname}'
-                e, runtime, found = read_others(fileothers)
+                e, runtime, nep, found = read_others(fileothers)
                 if found:
                     print(f'file {fileothers} read')
                     nsamples += 1
@@ -116,12 +112,8 @@ def parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others, path_to_losse
                     av_e_sqr += e ** 2
                     av_runtime += runtime
                     av_runtime_sqr += runtime ** 2
-                    fileloss = f'{path_to_losses}/loss_recurrent_q_{q}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_ntrials_{ntrials}_nep_{nepochs}_filename_{graphname}'
-                    nep, found_loss = read_loss(fileloss)
-                    if found_loss:
-                        print(f'file {fileloss} read')
-                        av_nep += nep
-                        av_nep_sqr += nep ** 2
+                    av_nep += nep
+                    av_nep_sqr += nep ** 2
             if nsamples > 0:
                 av_e /= nsamples
                 av_e_sqr /= nsamples
@@ -134,19 +126,20 @@ def parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others, path_to_losse
                 std_runtime = np.sqrt((av_runtime_sqr - av_runtime * av_runtime) / nsamples)
                 std_nep = np.sqrt((av_nep_sqr - av_nep * av_nep) / nsamples)
 
-                fout.write(str(N) + "\t" + str(c) + "\t" + str(nsamples) + "\t" + str(solved / nsamples) + "\t" + str(av_e) + "\t" + str(std_e)
+                fout.write(str(N) + "\t" + str("{0:.3f}".format(c)) + "\t" + str(nsamples) + "\t" + str(solved / nsamples) + "\t" + str(av_e) + "\t" + str(std_e)
                             + "\t" + str(av_runtime) + "\t" + str(std_runtime) + "\t" + str(av_nep) + "\t" + str(std_nep) + "\n")
     fout.close()
 
 
-version = "Old_graphs"
+version = "New_graphs"
+processor = "CPU"
 
 
 N_list = [128, 256, 512, 1024]
-# c_list = np.arange(3.32, 5.01, 0.18)
-# q = 3
-c_list = np.arange(9.1, 13.5, 0.4)
-q = 5
+c_list = np.arange(3.32, 5.01, 0.18)
+q = 3
+# c_list = np.arange(9.9, 13.5, 0.4)
+# q = 5
 seedmin = 1
 seedmax = 401
 ntrials = 1
@@ -154,17 +147,15 @@ nepochs = int(1e5)
 
 path_to_graph = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/random_graphs/ErdosRenyi/{version}/'
 
-path_to_others = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/q_{q}/{version}/others'
-path_to_losses = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/q_{q}/{version}/losses'
+path_to_others = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/{processor}/q_{q}/{version}/others'
 
 path_to_params = "/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/params"
 
-path_out = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/q_{q}/{version}/Stats/'
+path_out = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/{processor}/q_{q}/{version}/Stats/'
 fileout = path_out + f'Full_Stats_recurrent_q_{q}_ErdosRenyi_ntrials_{ntrials}_nep_{nepochs}.txt'
 
-# parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others, path_to_losses,
-#           fileout, path_to_params, ntrials, nepochs)
+parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others, fileout, path_to_params, ntrials, nepochs)
 
 
-parse_all_old(N_list, c_list, q, seedmin, seedmax, path_to_others, path_to_losses,
-              fileout, path_to_params, ntrials, nepochs)
+# parse_all_old(N_list, c_list, q, seedmin, seedmax, path_to_others,
+            #   fileout, path_to_params, ntrials)
