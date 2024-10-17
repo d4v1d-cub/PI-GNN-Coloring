@@ -86,12 +86,12 @@ cond = True
 min_cost = data_train.nxgraph.number_of_edges()
 while hypers['seed'] < init_seed + ntries and cond:
     print("\nTrying seed=", hypers['seed'])
-    net, inputs, optimizer = get_gnn(data_train.chr_n, data_train.fname, 
+    net, embed, optimizer = get_gnn(data_train.chr_n, data_train.fname, 
                                     data_train.nxgraph.number_of_nodes(), hypers, opt_hypers, 
                                     TORCH_DEVICE, TORCH_DTYPE)
 
     name,losses,hard_losses, prob,best_coloring,best_loss,final_coloring,final_loss,epoch_num, best_cost = run_gnn_training_early_stop(
-            hypers['graph_file'], data_train.nxgraph, data_train.graph, adj_, net, inputs, 
+            hypers['graph_file'], data_train.nxgraph, data_train.graph, adj_, net, embed, 
             optimizer, randdim, hypers['number_epochs'], hypers['patience'], hypers['tolerance'], hypers['seed'])
     
     hypers['seed'] += 1

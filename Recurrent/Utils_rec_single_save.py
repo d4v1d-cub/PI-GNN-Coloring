@@ -250,10 +250,8 @@ def get_gnn(q, name, n_nodes, gnn_hypers, opt_params, torch_device, torch_dtype)
     net = GNNSage(dim_embedding, hidden_dim, number_classes, dropout)
     
     net = net.type(torch_dtype).to(torch_device)
-    embed = nn.Embedding(n_nodes, dim_embedding)
-    embed = embed.type(torch_dtype).to(torch_device)
-    with torch.no_grad():
-        embed.weight[:, randdim:] = 0
+    inputs = torch.randn(n_nodes, dim_embedding, dtype=torch_dtype, device=torch_device)
+    inputs[:, randdim:] = 0
 
     # set up Adam optimizer
     # params = chain(net.parameters())
@@ -261,7 +259,7 @@ def get_gnn(q, name, n_nodes, gnn_hypers, opt_params, torch_device, torch_dtype)
     print(f'Building ADAM-W optimizer for graph {name}...')
     optimizer = torch.optim.AdamW(net.parameters(), **opt_params, weight_decay=1e-2)
 
-    return net, embed, optimizer
+    return net, inputs, optimizer
 
 
 # helper function for graph-coloring loss
@@ -302,7 +300,7 @@ def loss_func_color_hard(coloring, nx_graph):
     return cost_
 
 
-def run_gnn_training_early_stop(graphname, nx_graph, graph_dgl, adj_mat, net, embed, optimizer,
+def run_gnn_training_early_stop(graphname, nx_graph, graph_dgl, adj_mat, net, inputs, optimizer,
                                 randdim, number_epochs=int(1e5), patience=1000, tolerance=1e-4, seed=1):
     t_start = time()
 
@@ -350,7 +348,7 @@ def run_gnn_training_early_stop(graphname, nx_graph, graph_dgl, adj_mat, net, em
     epoch = 0
     while epoch < number_epochs and best_cost > 0.5:
         # get soft prob assignments
-        logits = net(graph_dgl, embed.weight)
+        logits = net(graph_dgl, inputs)
         # apply softmax for normalization
         probs = F.softmax(logits, dim=1)
 
@@ -406,8 +404,8 @@ def run_gnn_training_early_stop(graphname, nx_graph, graph_dgl, adj_mat, net, em
         optimizer.step()  # take step, update weights
 
         # Rebuild input parameters for recurrence
-        with torch.no_grad():
-            embed.weight[:, randdim:] = torch.cat((logits, probs), dim=1)
+        to_recur = torch.cat((logits, probs), dim=1).detach()
+        inputs[:, randdim:] = to_recur.clone()
 
         # tracking: print intermediate loss at regular interval
         if epoch % 500 == 0:
