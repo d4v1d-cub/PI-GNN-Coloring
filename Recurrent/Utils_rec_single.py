@@ -156,7 +156,7 @@ class GNNSage(nn.Module):
     case, just dropout.
     """
 
-    def __init__(self, in_feats, hidden_size, num_classes, dropout):
+    def __init__(self, in_feats, hidden_size, num_classes, dropout, TORCH_DEV, TORCH_DTYPE):
         """
         Initialize the model object. Establishes model architecture and relevant hypers (`dropout`, `num_classes`, `agg_type`)
         :param g: Input graph object
@@ -185,8 +185,10 @@ class GNNSage(nn.Module):
         self.outlayer = SAGEConv(hidden_size, num_classes, "mean")
         self.dropout = nn.Dropout(p=dropout)
 
-        self.batch_norm_mean = BN1D(hidden_size)
-        self.batch_norm_pool = BN1D(hidden_size)
+        self.batch_norm_mean = BN1D(hidden_size, device=TORCH_DEV, dtype=TORCH_DTYPE)
+        self.batch_norm_pool = BN1D(hidden_size, device=TORCH_DEV, dtype=TORCH_DTYPE)
+
+        self.relu = nn.ReLU()
 
     def forward(self, g, features):
         """
@@ -199,7 +201,7 @@ class GNNSage(nn.Module):
         """
         h = features
 
-        h = F.relu(torch.add(self.batch_norm_mean(self.l1_mean(g, h)), 
+        h = self.relu(torch.add(self.batch_norm_mean(self.l1_mean(g, h)), 
                              self.batch_norm_pool(self.l1_pool(g, h))))
         h = self.dropout(h)
         h = self.outlayer(g, h)
@@ -242,7 +244,7 @@ def get_gnn(q, name, n_nodes, gnn_hypers, opt_params, torch_device, torch_dtype)
 
     # instantiate the GNN
     print(f'Building {model} model for graph {name}, chrom number: {q}...')
-    net = GNNSage(dim_embedding, hidden_dim, number_classes, dropout)
+    net = GNNSage(dim_embedding, hidden_dim, number_classes, dropout, torch_device, torch_dtype)
     
     net = net.type(torch_dtype).to(torch_device)
     embed = nn.Embedding(n_nodes, dim_embedding)
