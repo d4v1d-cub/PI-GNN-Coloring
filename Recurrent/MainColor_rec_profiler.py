@@ -94,7 +94,7 @@ with profile(activities=[
 
 foutname = f'Profiler_recurrent_q_{data_train.chr_n}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_nep_{nepochs}_filename_{filename_without_ext}'
 
-fname = f'{path_prof}/{foutname}'
+fname = f'{path_prof}/{foutname}.txt'
 
 fout = open(fname, "w")
 
