@@ -229,13 +229,13 @@ path_to_graph = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Co
 
 # N_list = [16, 32, 64, 128, 256, 512, 1024]
 N_list = [128, 256, 512, 1024]
-c_list = np.arange(2.96, 5.01, 0.18)
-q = 3
-# c_list = np.arange(9.9, 13.5, 0.4)
-# q = 5
+# c_list = np.arange(2.96, 5.01, 0.18)
+# q = 3
+c_list = np.arange(9.9, 13.5, 0.4)
+q = 5
 seedmin = 1
 seedmax = 401
-ntrials = 1
+ntrials = 5
 nepochs = int(1e5)
 
 version = "New_graphs"
