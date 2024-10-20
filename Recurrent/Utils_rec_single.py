@@ -199,13 +199,8 @@ class GNNSage(nn.Module):
         """
         h = features
 
-        hmean = self.l1_mean(g, h)
-        hpool = self.l1_pool(g, h)
-
-        hmean = self.batch_norm_mean(hmean)
-        hpool = self.batch_norm_pool(hpool)
-
-        h = F.relu(hmean + hpool)
+        h = F.relu(torch.add(self.batch_norm_mean(self.l1_mean(g, h)), 
+                             self.batch_norm_pool(self.l1_pool(g, h))))
         h = self.dropout(h)
         h = self.outlayer(g, h)
 
