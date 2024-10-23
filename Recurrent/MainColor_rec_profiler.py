@@ -6,7 +6,8 @@ from torch.profiler import profile, record_function, ProfilerActivity
 from time import time
 
 
-from Utils_rec_single import(get_adjacency_matrix, get_gnn, SyntheticDataset)
+from Utils_rec_single import(get_adjacency_matrix, get_gnn, SyntheticDataset, 
+                             run_gnn_training_early_stop)
 
 
 # Set GPU/CPU
@@ -86,10 +87,13 @@ net, embed, optimizer = get_gnn(data_train.chr_n, data_train.fname,
                                 data_train.nxgraph.number_of_nodes(), hypers, opt_hypers, 
                                 TORCH_DEVICE, TORCH_DTYPE)
 
+
 with profile(activities=[
         ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True) as prof:
     with record_function("forward step"):
-        net(data_train.graph, embed.weight)
+        run_gnn_training_early_stop(
+            hypers['graph_file'], data_train.nxgraph, data_train.graph, adj_, net, embed, 
+            optimizer, randdim, hypers['number_epochs'], hypers['patience'], hypers['tolerance'], hypers['seed'])
 
 
 foutname = f'Profiler_recurrent_q_{data_train.chr_n}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_nep_{nepochs}_filename_{filename_without_ext}'

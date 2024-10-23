@@ -126,7 +126,7 @@
             "args": [
                 "5",
                 "Original/data/train/ErdosRenyi_N_1024_M_5069_id_111.txt",
-                "1e5",
+                "2e1",
                 "Recurrent/profiler",
                 "Recurrent/params/params_paper_recurrence.txt",
                 "0"
