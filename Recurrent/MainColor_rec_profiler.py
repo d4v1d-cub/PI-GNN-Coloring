@@ -90,7 +90,7 @@ net, embed, optimizer = get_gnn(data_train.chr_n, data_train.fname,
 
 with profile(activities=[
         ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True) as prof:
-    with record_function("forward step"):
+    with record_function(f'{nepochs} epochs'):
         run_gnn_training_early_stop(
             hypers['graph_file'], data_train.nxgraph, data_train.graph, adj_, net, embed, 
             optimizer, randdim, hypers['number_epochs'], hypers['patience'], hypers['tolerance'], hypers['seed'])
