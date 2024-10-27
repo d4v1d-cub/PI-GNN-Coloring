@@ -131,6 +131,19 @@
                 "Recurrent/params/params_paper_recurrence.txt",
                 "0"
             ]
+        },
+        {
+            "name": "profile_Katzgraber_code",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "./Original/profile_Katzgraber_code.py",
+            "console": "integratedTerminal",
+            "args": [
+                "queen13_13.col",
+                "Original/data/train",
+                "2e1",
+                "Original/profiler"
+            ]
         }
     ]
 }
