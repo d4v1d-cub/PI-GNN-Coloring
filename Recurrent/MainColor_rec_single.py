@@ -64,7 +64,7 @@ opt_hypers = {
     'lr': hypers.get('learning_rate', None)
 }
 
-t_start = time()
+
 
 # Default meta parameters
 solver_hypers = {
@@ -84,7 +84,9 @@ adj_ = get_adjacency_matrix(data_train.nxgraph, TORCH_DEVICE, TORCH_DTYPE)
 
 cond = True
 min_cost = data_train.nxgraph.number_of_edges()
+times = []
 while hypers['seed'] < init_seed + ntries and cond:
+    t_start = time()
     print("\nTrying seed=", hypers['seed'])
     net, embed, optimizer = get_gnn(data_train.chr_n, data_train.fname, 
                                     data_train.nxgraph.number_of_nodes(), hypers, opt_hypers, 
@@ -102,11 +104,11 @@ while hypers['seed'] < init_seed + ntries and cond:
         min_cost = 0
     elif min_cost > best_cost:
         min_cost = best_cost
-
-runtime_gnn = round(time() - t_start, 4)
+    runtime_gnn = round(time() - t_start, 4)
+    times.append(runtime_gnn)
 
         # report results
-print(f'GNN runtime: {runtime_gnn}s')
+print(f'GNN runtime: {sum(times)}s')
 
 str_file = f'recurrent_q_{data_train.chr_n}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_ntrials_{ntries}_nep_{nepochs}_filename_{filename_without_ext}'
 
@@ -115,5 +117,7 @@ cols_filename = "coloring_" + str_file
 others_filename = "others_" + str_file
 saver_loss(losses, path_loss, loss_filename, hard_losses)
 saver_colorings(best_coloring, path_colorings, cols_filename, data_train.nx_orig, final_coloring)
-others = [min_cost, runtime_gnn, hypers['seed'] - 1, epoch_num]
+others = [min_cost, times[0], hypers['seed'] - 1, epoch_num]
+for i in range(len(times)):
+    others.append(times[i])
 saver_others(others, path_others, others_filename)
