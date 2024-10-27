@@ -40,8 +40,6 @@ def parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others,
     fout.write("# N  c  id  E  runtime  nepochs  ntrials   max_nepochs\n")
     for N in N_list:
         for c in c_list:
-            nsamples = 0
-            solved = 0.0
             fileparams = f'{path_to_params}/params_paper_recurrence.txt'
             randdim, hiddim, dout, lrate = read_params(fileparams)
             for seed in range(seedmin, seedmax + 1):
@@ -60,12 +58,12 @@ processor = "CPU"
 
 
 N_list = [128, 256, 512, 1024]
-c_list = np.arange(3.32, 5.01, 0.18)
-q = 3
-# c_list = np.arange(9.9, 13.5, 0.4)
-# q = 5
+# c_list = np.arange(3.32, 5.01, 0.18)
+# q = 3
+c_list = np.arange(9.9, 13.5, 0.4)
+q = 5
 seedmin = 1
-seedmax = 401
+seedmax = 400
 ntrials = 5
 nepochs = int(1e5)
 
