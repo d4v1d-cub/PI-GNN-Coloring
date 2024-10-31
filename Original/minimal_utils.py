@@ -389,12 +389,12 @@ def run_gnn_training(nx_graph, graph_dgl, adj_mat, net, embed, optimizer,
         # get cost based on current hard class assignments
         # update cost if applicable
         coloring = torch.argmax(probs, dim=1)
-        cost_hard = loss_func_color_hard(coloring, nx_graph)
+        # cost_hard = loss_func_color_hard(coloring, nx_graph)
 
-        if cost_hard < best_cost:
-            best_loss = loss
-            best_cost = cost_hard
-            best_coloring = coloring
+        # if cost_hard < best_cost:
+        #     best_loss = loss
+        #     best_cost = cost_hard
+        #     best_coloring = coloring
 
         # Early stopping check
         # If loss increases or change in loss is too small, trigger
@@ -418,7 +418,7 @@ def run_gnn_training(nx_graph, graph_dgl, adj_mat, net, embed, optimizer,
         # tracking: print intermediate loss at regular interval
         if epoch % 1000 == 0:
             print('Epoch %d | Soft Loss: %.5f' % (epoch, loss.item()))
-            print('Epoch %d | Discrete Cost: %.5f' % (epoch, cost_hard.item()))
+            # print('Epoch %d | Discrete Cost: %.5f' % (epoch, cost_hard.item()))
 
     # Print final loss
     print('Epoch %d | Final loss: %.5f' % (epoch, loss.item()))
