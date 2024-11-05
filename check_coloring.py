@@ -228,7 +228,8 @@ path_to_graph = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Co
 
 
 # N_list = [16, 32, 64, 128, 256, 512, 1024]
-N_list = [128, 256, 512, 1024]
+# N_list = [128, 256, 512, 1024]
+N_list = [2048, 4096, 8192]
 c_list = np.arange(2.96, 5.01, 0.18)
 q = 3
 # c_list = np.arange(9.9, 13.5, 0.4)
@@ -247,7 +248,8 @@ path_to_cols = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Col
 path_to_params = "/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/params"
 
 path_out = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/{processor}/q_{q}/{version}/Stats/'
-fileout = path_out + f'Solved_recurrent_q_{q}_ErdosRenyi_ntrials_{ntrials}_nep_{nepochs}.txt'
+# fileout = path_out + f'Solved_recurrent_q_{q}_ErdosRenyi_ntrials_{ntrials}_nep_{nepochs}.txt'
+fileout = path_out + f'Solved_recurrent_q_{q}_ErdosRenyi_ntrials_{ntrials}_nep_{nepochs}_largeN.txt'
 
 solv_frac = check_all_rec(N_list, c_list, q, seedmin, seedmax, path_to_graph, path_to_cols,
                           fileout, path_to_params, ntrials, nepochs)

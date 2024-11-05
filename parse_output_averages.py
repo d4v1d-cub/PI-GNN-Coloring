@@ -15,7 +15,11 @@ def read_others(fileothers):
     except (IOError, OSError):
         print(f'file "{fileothers}" not read')
         return -1, -1, -1, False
-    line = fin.readline().split()
+    j = fin.readline()
+    if not j:
+        print(f'file "{fileothers}" is empty')
+        return -1, -1, -1, False
+    line = j.split()
     return int(line[0]), float(line[1]), int(line[3]), True
 
 
@@ -135,14 +139,15 @@ version = "New_graphs"
 processor = "CPU"
 
 
-N_list = [128, 256, 512, 1024]
+N_list = [128, 256, 512, 1024, 2048, 4096, 8192]
+# N_list = [2048, 4096, 8192]
 c_list = np.arange(3.32, 5.01, 0.18)
 q = 3
 # c_list = np.arange(9.9, 13.5, 0.4)
 # q = 5
 seedmin = 1
 seedmax = 400
-ntrials = 1
+ntrials = 5
 nepochs = int(1e5)
 
 path_to_graph = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/random_graphs/ErdosRenyi/{version}/'
@@ -155,6 +160,7 @@ path_to_params = "/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Co
 path_out = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/{processor}/q_{q}/{version}/Stats/'
 # path_out = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/Profiling/times_full/q_{q}/Stats/'
 fileout = path_out + f'Full_Stats_recurrent_q_{q}_ErdosRenyi_ntrials_{ntrials}_nep_{nepochs}.txt'
+# fileout = path_out + f'Full_Stats_recurrent_q_{q}_ErdosRenyi_ntrials_{ntrials}_nep_{nepochs}_large_N.txt'
 
 parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others, fileout, path_to_params, ntrials, nepochs)
 
