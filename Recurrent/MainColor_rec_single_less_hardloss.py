@@ -110,7 +110,7 @@ while hypers['seed'] < init_seed + ntries and cond:
         # report results
 print(f'GNN runtime: {sum(times)}s')
 
-str_file = f'recurrent_q_{data_train.chr_n}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_ntrials_{ntries}_nep_{nepochs}_filename_{filename_without_ext}'
+str_file = f'recurrent_less_hardloss_q_{data_train.chr_n}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_ntrials_{ntries}_nep_{nepochs}_filename_{filename_without_ext}'
 
 loss_filename = "loss_" + str_file
 cols_filename = "coloring_" + str_file
