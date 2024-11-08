@@ -92,17 +92,18 @@ while hypers['seed'] < init_seed + ntries and cond:
     t_start = time()
     data_train = SyntheticDataset(folder)
     print('Dataset ready\n')
-    adj_ = get_adjacency_matrix(data_train.nxgraph, TORCH_DEVICE, TORCH_DTYPE)
+    all_adj_ = get_adjacency_matrix(data_train.nx_clean_all, TORCH_DEVICE, TORCH_DTYPE)
 
     print("\nTrying seed=", hypers['seed'])
-    net, embed, optimizer = get_gnn(data_train.nxgraph.number_of_nodes(), hypers, opt_hypers, 
+    net, embed, optimizer = get_gnn(data_train.graph.num_nodes(), hypers, opt_hypers, 
                                     TORCH_DEVICE, TORCH_DTYPE)
 
     losses, final_coloring, final_loss, final_cost = run_gnn_training(
-            data_train.nxgraph, data_train.graph, adj_, net, embed, 
+            data_train.nx_clean_all, data_train.graph, all_adj_, net, embed, 
             optimizer, randdim, hypers['number_epochs'], hypers['patience'], hypers['tolerance'], hypers['seed'])
     
-    full_colors = get_full_colors(final_coloring, data_train.nx_orig)
+    full_colors = get_full_colors(final_coloring, data_train.nx_orig_all, 
+                                  data_train.graph.batch_num_nodes())
     saver_colorings(full_colors, best_colorings, best_costs, path_colorings, name_start_col, 
                     data_train, graph_index, hypers['seed'], best_seed)
 

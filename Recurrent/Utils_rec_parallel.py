@@ -27,7 +27,7 @@ def set_seed(seed):
         torch.cuda.manual_seed_all(seed)
 
 
-def get_adjacency_matrix(nx_graph, torch_device, torch_dtype):
+def get_adjacency_matrix(nx_graph_all, torch_device, torch_dtype):
     """
     Pre-load adjacency matrix, map to torch device
     :param nx_graph: Graph object to pull adjacency matrix for
@@ -40,16 +40,13 @@ def get_adjacency_matrix(nx_graph, torch_device, torch_dtype):
     :rtype: torch.tensor
     """
 
-    adj = nx.linalg.graphmatrix.adjacency_matrix(nx_graph).tocoo()
-    values = adj.data
-    indices = np.vstack((adj.row, adj.col))
-    i = torch.LongTensor(indices)
-    v = torch.FloatTensor(values)
-    shape = adj.shape
+    all_adj_ = []
+    for nx_graph in nx_graph_all:
+        adj = nx.linalg.graphmatrix.adjacency_matrix(nx_graph).todense()
+        adj_ = torch.tensor(adj).type(torch_dtype).to(torch_device) #torch_dtype is float32 in their case
+        all_adj_.append(adj_)
 
-    adj_ = torch.sparse_coo_tensor(i, v, torch.Size(shape)).type(torch_dtype).to(torch_device)
-
-    return adj_
+    return all_adj_
 
 
 def saver_loss(lista1, path, name): #IGNORE
@@ -66,16 +63,20 @@ def saver_loss(lista1, path, name): #IGNORE
     file1.close()
 
 
-def get_full_colors(final_colors, nx_orig):
+def get_full_colors(final_colors, all_nx_orig, nnodes_clean):
     final_colors_new = []
-    isol = list(nx.isolates(nx_orig))
-    offset = 0
-    for i in range(nx_orig.number_of_nodes()):
-        if i in isol:
-            final_colors_new.append(0)
-            offset += 1
-        else:
-            final_colors_new.append(final_colors[i - offset].item())
+    cumul = 0
+    for j in range(len(all_nx_orig)):
+        nx_orig = all_nx_orig[j]
+        isol = list(nx.isolates(nx_orig))
+        offset = 0
+        for i in range(nx_orig.number_of_nodes()):
+            if i in isol:
+                final_colors_new.append(0)
+                offset += 1
+            else:
+                final_colors_new.append(final_colors[cumul + i - offset].item())
+        cumul += nnodes_clean[j].item()
     return final_colors_new
 
 
@@ -161,40 +162,47 @@ def get_graph_index(folder):
         counter += 1
     return graph_index, counter
 
+
+def get_dgl_graph(folder, fname, node_offset):
+    nx_orig = nx.Graph()
+    print(f'Building graph from contents of file: {fname}')
+    with open(f'{folder}/{fname}', 'r') as f:
+        content = f.read().strip()
+    lines = content.split('\n')  # skip comment line(s)
+    n=int(lines[0].split()[1])
+    nedges=int(lines[1].split()[1])
+    edgesnx=[parse_line(line, node_offset) for line in lines[2:nedges+2]]
+    for i in range(n):
+        nx_orig.add_node(i)
+    for edge in edgesnx:
+        nx_orig.add_edge(edge[0], edge[1])
+
+    nx_clean = nx_orig.copy()
+    nx_clean.remove_nodes_from(list(nx.isolates(nx_clean)))
+    nx_clean = nx.convert_node_labels_to_integers(nx_clean)
+
+    return nx_orig, nx_clean
+    
+
+
 class SyntheticDataset(DGLDataset):
     def __init__(self, folder, node_offset=-1):
         self.folder=folder
         self.node_offset=node_offset
+        self.nx_orig_all = []
+        self.nx_clean_all = []
+        self.dgl_graph_all = []
         super().__init__(name="synthetic")
 
     def process(self):
 
-        nx_orig = nx.Graph()
-        total_n = 0
-        edgesnx = []
         for fname in os.listdir(self.folder):
-            print(f'Building graph from contents of file: {fname}')
-            with open(f'{self.folder}/{fname}', 'r') as f:
-                content = f.read().strip()
-            lines = content.split('\n')  # skip comment line(s)
-            n=int(lines[0].split()[1])
-            nedges=int(lines[1].split()[1])
-            edgesnx+=[parse_line(line, self.node_offset + total_n) for line in lines[2:nedges+2]]
-            total_n += n
-
-        for i in range(total_n):
-            nx_orig.add_node(i)
-        for edge in edgesnx:
-            nx_orig.add_edge(edge[0], edge[1])
-
-        nx_clean = nx_orig.copy()
-        nx_clean.remove_nodes_from(list(nx.isolates(nx_clean)))
-        nx_clean = nx.convert_node_labels_to_integers(nx_clean)
-
-        self.nx_orig = nx_orig
-        self.nxgraph = nx_clean
-        dgl_graph = dgl.from_networkx(nx_clean, device=dev)        
-        self.graph = dgl_graph
+            nx_orig, nx_clean = get_dgl_graph(self.folder, fname, self.node_offset)
+            self.nx_orig_all.append(nx_orig)
+            self.nx_clean_all.append(nx_clean)
+            self.dgl_graph_all.append(dgl.from_networkx(nx_clean, device=dev))
+        
+        self.graph = dgl.batch(self.dgl_graph_all)
 
 
 # Define GNN GraphSage object
@@ -311,7 +319,7 @@ def get_gnn(n_nodes, gnn_hypers, opt_params, torch_device, torch_dtype):
 
 
 # helper function for graph-coloring loss
-def loss_func_mod(probs, adj_tensor):
+def loss_func_mod(probs, all_adj_tensor, all_nx_graph):
     """
     Function to compute cost value based on soft assignments (probabilities)
     :param probs: Probability vector, of each node belonging to each class
@@ -324,13 +332,19 @@ def loss_func_mod(probs, adj_tensor):
 
     # Multiply probability vectors, then filter via elementwise application of adjacency matrix.
     #  Divide by 2 to adjust for symmetry about the diagonal
-    loss_ = torch.mul(adj_tensor, (probs @ probs.T)).sum() / 2
+    cumul = 0
+    loss_ = 0
+    for i in range(len(all_nx_graph)):
+        n = all_nx_graph[i].number_of_nodes()
+        probs_part = probs[cumul:cumul + n, :]
+        loss_ += torch.mul(all_adj_tensor[i], (probs_part @ probs_part.T)).sum() / 2
+        cumul += n
 
     return loss_
 
 
 # helper function for custom loss according to Q matrix
-def loss_func_color_hard(coloring, nx_graph):
+def loss_func_color_hard(coloring, all_nx_graph):
     """
     Function to compute cost value based on color vector (0, 2, 1, 4, 1, ...)
     :param coloring: Vector of class assignments (colors)
@@ -342,13 +356,18 @@ def loss_func_color_hard(coloring, nx_graph):
     """
 
     cost_ = 0
-    for (u, v) in nx_graph.edges:
-        cost_ += 1*(coloring[u] == coloring[v])*(u != v) #for self loops loss func not to be incremented obv.
+    cumul = 0
+    for i in range(len(all_nx_graph)):
+        n = all_nx_graph[i].number_of_nodes()
+        coloring_part = coloring[cumul:cumul + n]
+        for (u, v) in all_nx_graph[i].edges:
+            cost_ += 1*(coloring_part[u] == coloring_part[v])*(u != v)
+        cumul += n
 
     return cost_
 
 
-def run_gnn_training(nx_graph, graph_dgl, adj_mat, net, embed, optimizer,
+def run_gnn_training(all_nx_graph, graph_dgl, all_adj_mat, net, embed, optimizer,
                                 randdim, number_epochs=int(1e5), patience=1000, tolerance=1e-4, seed=1):
     t_start = time()
 
@@ -398,7 +417,7 @@ def run_gnn_training(nx_graph, graph_dgl, adj_mat, net, embed, optimizer,
 
         # get cost value with POTTS cost function
         #weight_classes=weight_classes_orig*factor
-        loss = loss_func_mod(probs, adj_mat)
+        loss = loss_func_mod(probs, all_adj_mat, all_nx_graph)
 
         
         if (abs(loss - prev_loss) <= tolerance) | ((loss - prev_loss) > 0):
@@ -444,7 +463,7 @@ def run_gnn_training(nx_graph, graph_dgl, adj_mat, net, embed, optimizer,
     final_coloring = torch.argmax(probs, 1)
     print(f'Final soft loss: {final_loss:.3f}, chromatic_number: {torch.max(final_coloring)+1}')
 
-    final_cost = loss_func_color_hard(final_coloring, nx_graph)
+    final_cost = loss_func_color_hard(final_coloring, all_nx_graph)
     print('Epoch %d | Final loss: %.5f | Final cost: %.5f' % (epoch, loss.item(), final_cost))
 
     
