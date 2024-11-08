@@ -100,7 +100,7 @@
                 "Recurrent/others",
                 "Recurrent/params/params_paper_recurrence.txt",
                 "0",
-                "1"
+                "2"
             ]
         },
         {
@@ -143,6 +143,24 @@
                 "Original/data/train",
                 "2e1",
                 "Original/profiler"
+            ]
+        },
+        {
+            "name": "MainColor_rec_parallel",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "./Recurrent/MainColor_rec_parallel.py",
+            "console": "integratedTerminal",
+            "args": [
+                "5",
+                "Recurrent/training_parallel",
+                "2000",
+                "Recurrent/losses",
+                "Recurrent/colorings",
+                "Recurrent/others",
+                "Recurrent/params/params_paper_recurrence.txt",
+                "0",
+                "2"
             ]
         }
     ]

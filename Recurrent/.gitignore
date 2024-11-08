@@ -3,4 +3,5 @@
 /params
 /others
 /profiler
+/training_parallel
 /__pycache__

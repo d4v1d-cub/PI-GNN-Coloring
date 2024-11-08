@@ -141,9 +141,9 @@ processor = "CPU"
 
 N_list = [128, 256, 512, 1024, 2048, 4096, 8192]
 # N_list = [2048, 4096, 8192]
-# c_list = np.arange(3.32, 5.01, 0.18)
-q = 5
-c_list = np.arange(9.9, 13.5, 0.4)
+c_list = np.arange(3.32, 5.01, 0.18)
+q = 3
+# c_list = np.arange(9.9, 13.5, 0.4)
 # q = 5
 seedmin = 1
 seedmax = 400
