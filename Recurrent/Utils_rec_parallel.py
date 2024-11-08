@@ -40,8 +40,14 @@ def get_adjacency_matrix(nx_graph, torch_device, torch_dtype):
     :rtype: torch.tensor
     """
 
-    adj = nx.linalg.graphmatrix.adjacency_matrix(nx_graph).todense()
-    adj_ = torch.tensor(adj).type(torch_dtype).to(torch_device) #torch_dtype is float32 in their case
+    adj = nx.linalg.graphmatrix.adjacency_matrix(nx_graph).tocoo()
+    values = adj.data
+    indices = np.vstack((adj.row, adj.col))
+    i = torch.LongTensor(indices)
+    v = torch.FloatTensor(values)
+    shape = adj.shape
+
+    adj_ = torch.sparse_coo_tensor(i, v, torch.Size(shape)).type(torch_dtype).to(torch_device)
 
     return adj_
 
