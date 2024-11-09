@@ -14,7 +14,7 @@ from Utils_rec_parallel import(get_adjacency_matrix, saver_loss, saver_colorings
 # Set GPU/CPU
 TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 TORCH_DTYPE = torch.float32
-print(f'Will use device: {TORCH_DEVICE}, torch dtype: {TORCH_DTYPE}')
+print(f'Will use device: {TORCH_DEVICE}, torch dtype: {TORCH_DTYPE}', flush=True)
 
 
 def read_params(fileparams):
@@ -39,8 +39,8 @@ ntries = int(sys.argv[9])
 
 randdim, hiddim, dout, lrate = read_params(fileparams)
 
-print("Parameters are:")
-print(f'randdim={randdim}   hiddim={hiddim}    dout={dout}    lrate={lrate}')
+print("Parameters are:", flush=True)
+print(f'randdim={randdim}   hiddim={hiddim}    dout={dout}    lrate={lrate}', flush=True)
 
 
 hypers = {
@@ -91,10 +91,10 @@ times = []
 while hypers['seed'] < init_seed + ntries and cond:
     t_start = time()
     data_train = SyntheticDataset(folder)
-    print('Dataset ready\n')
+    print('Dataset ready\n', flush=True)
     all_adj_ = get_adjacency_matrix(data_train.nx_clean_all, TORCH_DEVICE, TORCH_DTYPE)
 
-    print("\nTrying seed=", hypers['seed'])
+    print("\nTrying seed=", hypers['seed'], flush=True)
     net, embed, optimizer = get_gnn(data_train.graph.num_nodes(), hypers, opt_hypers, 
                                     TORCH_DEVICE, TORCH_DTYPE)
 
@@ -109,14 +109,14 @@ while hypers['seed'] < init_seed + ntries and cond:
 
     if final_cost < 0.5:
         cond = False
-        print("Success with all graphs at seed=", hypers['seed'])
+        print("Success with all graphs at seed=", hypers['seed'], flush=True)
     runtime_gnn = round(time() - t_start, 4)
     times.append(runtime_gnn)
 
     hypers['seed'] += 1
 
         # report results
-print(f'GNN runtime: {sum(times)}s')
+print(f'GNN runtime: {sum(times)}s', flush=True)
 
 loss_filename = "loss_" + str_file
 others_filename = "others_" + str_file

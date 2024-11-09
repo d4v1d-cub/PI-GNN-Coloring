@@ -165,7 +165,7 @@ def get_graph_index(folder):
 
 def get_dgl_graph(folder, fname, node_offset):
     nx_orig = nx.Graph()
-    print(f'Building graph from contents of file: {fname}')
+    print(f'Building graph from contents of file: {fname}', flush=True)
     with open(f'{folder}/{fname}', 'r') as f:
         content = f.read().strip()
     lines = content.split('\n')  # skip comment line(s)
@@ -286,10 +286,10 @@ def get_gnn(n_nodes, gnn_hypers, opt_params, torch_device, torch_dtype):
     """
 
     try:
-        print(f'Function get_gnn(): Setting seed to {gnn_hypers["seed"]}')
+        print(f'Function get_gnn(): Setting seed to {gnn_hypers["seed"]}', flush=True)
         set_seed(gnn_hypers['seed'])
     except KeyError:
-        print('!! Function get_gnn(): Seed not specified in gnn_hypers object. Defaulting to 0 !!')
+        print('!! Function get_gnn(): Seed not specified in gnn_hypers object. Defaulting to 0 !!', flush=True)
         set_seed(0)
 
     model = gnn_hypers['model']
@@ -300,7 +300,7 @@ def get_gnn(n_nodes, gnn_hypers, opt_params, torch_device, torch_dtype):
     randdim = gnn_hypers['dim_rand_input']
 
     # instantiate the GNN
-    print(f'Building {model}...')
+    print(f'Building {model}...', flush=True)
     net = GNNSage(dim_embedding, hidden_dim, number_classes, dropout, torch_device, torch_dtype)
     
     net = net.type(torch_dtype).to(torch_device)
@@ -312,7 +312,7 @@ def get_gnn(n_nodes, gnn_hypers, opt_params, torch_device, torch_dtype):
     # set up Adam optimizer
     # params = chain(net.parameters())
 
-    print(f'Building ADAM-W optimizer...')
+    print(f'Building ADAM-W optimizer...', flush=True)
     optimizer = torch.optim.AdamW(net.parameters(), **opt_params, weight_decay=1e-2)
 
     return net, embed, optimizer
@@ -398,7 +398,7 @@ def run_gnn_training(all_nx_graph, graph_dgl, all_adj_mat, net, embed, optimizer
     """
     losses=[]
     # Ensure RNG seeds are reset each training run
-    print(f'Function run_gnn_training(): Setting seed to {seed}')
+    print(f'Function run_gnn_training(): Setting seed to {seed}', flush=True)
     set_seed(seed)
 
     # Tracking
@@ -439,7 +439,7 @@ def run_gnn_training(all_nx_graph, graph_dgl, all_adj_mat, net, embed, optimizer
         prev_loss = loss
 
         if cnt >= patience:
-            print(f'Stopping early on epoch {epoch}. Patience count: {cnt}')
+            print(f'Stopping early on epoch {epoch}. Patience count: {cnt}', flush=True)
             break
 
         # run optimization with backpropagation
@@ -455,16 +455,16 @@ def run_gnn_training(all_nx_graph, graph_dgl, all_adj_mat, net, embed, optimizer
         if epoch % 500 == 0:
             print(f'Epoch {epoch} | Soft Loss: {loss.item():.5f} \
                    | time: {round(time() - t_start, 4)} |  CPU Usage: {psutil.cpu_percent()} \
-                   | RAM Usage: {psutil.virtual_memory().used / (1024 ** 3)} GB  |  GPU memory {torch.cuda.memory_allocated(device=dev)}')
+                   | RAM Usage: {psutil.virtual_memory().used / (1024 ** 3)} GB  |  GPU memory {torch.cuda.memory_allocated(device=dev)}', flush=True)
         epoch += 1
     # Print final loss
     # Final coloring
     final_loss = loss
     final_coloring = torch.argmax(probs, 1)
-    print(f'Final soft loss: {final_loss:.3f}, chromatic_number: {torch.max(final_coloring)+1}')
+    print(f'Final soft loss: {final_loss:.3f}, chromatic_number: {torch.max(final_coloring)+1}', flush=True)
 
     final_cost = loss_func_color_hard(final_coloring, all_nx_graph)
-    print('Epoch %d | Final loss: %.5f | Final cost: %.5f' % (epoch, loss.item(), final_cost))
+    print('Epoch %d | Final loss: %.5f | Final cost: %.5f' % (epoch, loss.item(), final_cost), flush=True)
 
     
     
