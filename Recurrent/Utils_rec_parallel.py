@@ -453,13 +453,9 @@ def run_gnn_training(all_nx_graph, graph_dgl, all_adj_mat, net, embed, optimizer
 
         # tracking: print intermediate loss at regular interval
         if epoch % 500 == 0:
-            free_mem, total_mem = torch.cuda.mem_get_info(device=dev)
             print(f'Epoch {epoch} | Soft Loss: {loss.item():.5f} \
                    | time: {round(time() - t_start, 4)} |  CPU Usage: {psutil.cpu_percent()} \
-                   | RAM Usage: {psutil.virtual_memory().used / (1024 ** 3)} GB  \
-                   |  GPU memory {torch.cuda.memory_allocated(device=dev) / (1024 ** 3)} GB  \
-                   |  GPU memory free {free_mem / (1024 ** 3)} GB \
-                   |  GPU memory total {total_mem / (1024 ** 3)} GB', flush=True)
+                   | RAM Usage: {psutil.virtual_memory().used / (1024 ** 3)} GB  |  GPU memory {torch.cuda.memory_allocated(device=dev)}', flush=True)
         epoch += 1
     # Print final loss
     # Final coloring
