@@ -104,6 +104,24 @@
             ]
         },
         {
+            "name": "MainColor_rec_single_less_hardloss",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "./Recurrent/MainColor_rec_single_less_hardloss.py",
+            "console": "integratedTerminal",
+            "args": [
+                "5",
+                "Original/data/train/ErdosRenyi_N_1024_M_5069_id_111.txt",
+                "1e5",
+                "Recurrent/losses",
+                "Recurrent/colorings",
+                "Recurrent/others",
+                "Recurrent/params/params_paper_recurrence.txt",
+                "0",
+                "2"
+            ]
+        },
+        {
             "name": "gen_graphs_coloring",
             "type": "debugpy",
             "request": "launch",
@@ -160,7 +178,8 @@
                 "Recurrent/others",
                 "Recurrent/params/params_paper_recurrence.txt",
                 "0",
-                "2"
+                "2",
+                "test"
             ]
         }
     ]

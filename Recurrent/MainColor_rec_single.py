@@ -93,7 +93,7 @@ while hypers['seed'] < init_seed + ntries and cond:
                                     TORCH_DEVICE, TORCH_DTYPE)
 
     name,losses,hard_losses, prob,best_coloring,best_loss,final_coloring,final_loss,epoch_num, best_cost = run_gnn_training_early_stop(
-            hypers['graph_file'], data_train.nxgraph, data_train.graph, adj_, net, embed, 
+            hypers['graph_file'], data_train.edges_list, data_train.graph, adj_, net, embed, 
             optimizer, randdim, hypers['number_epochs'], hypers['patience'], hypers['tolerance'], hypers['seed'])
     
     hypers['seed'] += 1

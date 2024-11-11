@@ -8,7 +8,6 @@ import numpy as np
 import dgl
 from dgl.nn.pytorch import SAGEConv
 from dgl.data import DGLDataset
-dev = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 from time import time
 import psutil
 import os
@@ -27,7 +26,7 @@ def set_seed(seed):
         torch.cuda.manual_seed_all(seed)
 
 
-def get_adjacency_matrix(nx_graph_all, torch_device, torch_dtype):
+def get_adjacency_matrix(nx_graph, torch_device, torch_dtype):
     """
     Pre-load adjacency matrix, map to torch device
     :param nx_graph: Graph object to pull adjacency matrix for
@@ -40,13 +39,9 @@ def get_adjacency_matrix(nx_graph_all, torch_device, torch_dtype):
     :rtype: torch.tensor
     """
 
-    all_adj_ = []
-    for nx_graph in nx_graph_all:
-        adj = nx.linalg.graphmatrix.adjacency_matrix(nx_graph).todense()
-        adj_ = torch.tensor(adj).type(torch_dtype).to(torch_device) #torch_dtype is float32 in their case
-        all_adj_.append(adj_)
-
-    return all_adj_
+    adj = nx.linalg.graphmatrix.adjacency_matrix(nx_graph).todense()
+    adj_ = torch.tensor(adj).type(torch_dtype).to(torch_device) #torch_dtype is float32 in their case
+    return adj_
 
 
 def saver_loss(lista1, path, name): #IGNORE
@@ -63,62 +58,65 @@ def saver_loss(lista1, path, name): #IGNORE
     file1.close()
 
 
-def get_full_colors(final_colors, all_nx_orig, nnodes_clean):
-    final_colors_new = []
-    cumul = 0
-    for j in range(len(all_nx_orig)):
-        nx_orig = all_nx_orig[j]
-        isol = list(nx.isolates(nx_orig))
+
+def update_best(folder, best_colorings, best_costs, coloring_seed, cost_seed, seed, best_seeds):    
+    for fname in os.listdir(folder):
+        if cost_seed[fname] < best_costs[fname]:
+            best_costs[fname] = cost_seed[fname]
+            best_colorings[fname] = coloring_seed[fname]
+            best_seeds[fname] = seed
+
+
+def get_full_colors(best_coloring, all_isolates, nnodes_orig, folder):
+    best_colors_full = {}
+    for fname in os.listdir(folder):
+        isol = all_isolates[fname]
         offset = 0
-        for i in range(nx_orig.number_of_nodes()):
+        inner = []
+        for i in range(nnodes_orig[fname]):
             if i in isol:
-                final_colors_new.append(0)
+                inner.append(0)
                 offset += 1
             else:
-                final_colors_new.append(final_colors[cumul + i - offset].item())
-        cumul += nnodes_clean[j].item()
-    return final_colors_new
+                inner.append(best_coloring[fname][i - offset].item())
+        best_colors_full[fname] = inner
+    return best_colors_full
 
 
-def saver_colorings(full_colors, best_colorings, best_costs, path, name_start, 
-                    data_train, index_graphs, seed, best_seed):    
+def saver_colorings(best_colorings_full, best_costs, path, name_start, 
+                    folder, node_offset, seed):    
 
-    ncumul = 0
-    for fname in os.listdir(data_train.folder):
+    for fname in os.listdir(folder):
         cost = 0
-        with open(f'{data_train.folder}/{fname}', 'r') as f:
+        with open(f'{folder}/{fname}', 'r') as f:
                 content = f.read().strip()
         lines = content.split('\n')  # skip comment line(s)
-        n=int(lines[0].split()[1])
         nedges=int(lines[1].split()[1])
         for line in lines[2:nedges+2]:
-            edge = parse_line(line, data_train.node_offset + ncumul)
-            if full_colors[edge[0]] == full_colors[edge[1]]:
+            edge = parse_line(line, node_offset)
+            if best_colorings_full[fname][edge[0]] == best_colorings_full[fname][edge[1]]:
                 cost += 1
-        if cost < best_costs[index_graphs[fname]]:
-            best_costs[index_graphs[fname]] = cost
-            best_colorings[index_graphs[fname]] = full_colors[ncumul:ncumul + n]
-            best_seed[index_graphs[fname]] = seed
-            if cost == 0:
-                fname_without_ext = os.path.splitext(os.path.basename(fname))[0]
-                file3 = open(f'{path}/{name_start}_filename_{fname_without_ext}.txt', "w")  # write mode
-                file3.write(str(best_colorings[index_graphs[fname]])+'\n')#final coloring
-                file3.write(f'{seed}\t{best_costs[index_graphs[fname]]}')
-                file3.close()
-                os.remove(f'{data_train.folder}/{fname}')
-        ncumul += n
+        if cost != best_costs[fname]:
+            print("There is a problem with the inter computation of the costs")
+        elif cost == 0:
+            fname_without_ext = os.path.splitext(os.path.basename(fname))[0]
+            file3 = open(f'{path}/{name_start}_filename_{fname_without_ext}.txt', "w")  # write mode
+            file3.write(str(best_colorings_full[fname])+'\n')#final coloring
+            file3.write(f'{seed}\t{best_costs[fname]}')
+            file3.close()
+            os.remove(f'{folder}/{fname}')
 
 
 def saver_colorings_final(best_colorings, best_costs, path, name_start, 
-                            data_train, index_graphs, best_seed):    
+                            folder, best_seed):    
 
-    for fname in os.listdir(data_train.folder):
+    for fname in os.listdir(folder):
         fname_without_ext = os.path.splitext(os.path.basename(fname))[0]
         file3 = open(f'{path}/{name_start}_filename_{fname_without_ext}.txt', "w")  # write mode
-        file3.write(str(best_colorings[index_graphs[fname]])+'\n')#final coloring
-        file3.write(f'{best_seed[index_graphs[fname]]}\t{best_costs[index_graphs[fname]]}')
+        file3.write(str(best_colorings[fname])+'\n')#final coloring
+        file3.write(f'{best_seed[fname]}\t{best_costs[fname]}')
         file3.close()
-        os.remove(f'{data_train.folder}/{fname}')
+        os.remove(f'{folder}/{fname}')
 
 
     
@@ -140,27 +138,15 @@ def parse_line(file_line, node_offset=0):
     return x, y
 
 
-def find_disc_nodes(edges_nx, n):
-    all_nodes = []
-    for edge in edges_nx:
-        if edge[0] not in all_nodes:
-            all_nodes.append(edge[0])
-        if edge[1] not in all_nodes:
-            all_nodes.append(edge[1])
-    missing = []
-    for i in range(n):
-        if i not in all_nodes:
-            missing.append(i)
-    return missing
-
-
-def get_graph_index(folder):
-    graph_index = {}
-    counter = 0
+def init_best(folder):
+    best_costs = {}
+    best_colorings = {}
+    best_seeds = {}
     for fname in os.listdir(folder):
-        graph_index[fname] = counter
-        counter += 1
-    return graph_index, counter
+        best_costs[fname] = np.inf
+        best_seeds[fname] = np.inf
+        best_colorings[fname] = []
+    return best_colorings, best_costs, best_seeds
 
 
 def get_dgl_graph(folder, fname, node_offset):
@@ -186,23 +172,40 @@ def get_dgl_graph(folder, fname, node_offset):
 
 
 class SyntheticDataset(DGLDataset):
-    def __init__(self, folder, node_offset=-1):
+    def __init__(self, folder, torch_device, torch_dtype, node_offset=-1):
         self.folder=folder
         self.node_offset=node_offset
-        self.nx_orig_all = []
-        self.nx_clean_all = []
-        self.dgl_graph_all = []
+        self.torch_device=torch_device
+        self.torch_dtype=torch_dtype
+        self.isolated_nodes = {}
+        self.nnodes_orig = {}
+        self.nnodes_clean = {}
+        self.nx_clean_edges = {}
+        self.all_adj_matrix = {}
         super().__init__(name="synthetic")
 
     def process(self):
 
-        for fname in os.listdir(self.folder):
-            nx_orig, nx_clean = get_dgl_graph(self.folder, fname, self.node_offset)
-            self.nx_orig_all.append(nx_orig)
-            self.nx_clean_all.append(nx_clean)
-            self.dgl_graph_all.append(dgl.from_networkx(nx_clean, device=dev))
-        
-        self.graph = dgl.batch(self.dgl_graph_all)
+        fname_list = os.listdir(self.folder)
+        if len(fname_list) > 0:
+            nx_orig, nx_clean = get_dgl_graph(self.folder, fname_list[0], self.node_offset)
+            self.nnodes_orig[fname_list[0]] = nx_orig.number_of_nodes()
+            self.nnodes_clean[fname_list[0]] = nx_clean.number_of_nodes()
+            isol = list(nx.isolates(nx_orig))
+            self.isolated_nodes[fname_list[0]] = isol
+            self.nx_clean_edges[fname_list[0]] = np.array(nx_clean.edges())
+            self.all_adj_matrix[fname_list[0]] = get_adjacency_matrix(nx_clean, self.torch_device, self.torch_dtype)
+            self.graph = dgl.batch([dgl.from_networkx(nx_clean, device=self.torch_device)])
+            for i in range(1, len(fname_list)):
+                nx_orig, nx_clean = get_dgl_graph(self.folder, fname_list[i], self.node_offset)
+                self.nnodes_orig[fname_list[i]] = nx_orig.number_of_nodes()
+                self.nnodes_clean[fname_list[i]] = nx_clean.number_of_nodes()
+                isol = list(nx.isolates(nx_orig))
+                self.isolated_nodes[fname_list[i]] = isol
+                self.nx_clean_edges[fname_list[i]] = np.array(nx_clean.edges())
+                self.all_adj_matrix[fname_list[i]] = get_adjacency_matrix(nx_clean, self.torch_device, self.torch_dtype)
+                self.graph = dgl.batch([self.graph, dgl.from_networkx(nx_clean, device=self.torch_device)])
+            
 
 
 # Define GNN GraphSage object
@@ -319,7 +322,7 @@ def get_gnn(n_nodes, gnn_hypers, opt_params, torch_device, torch_dtype):
 
 
 # helper function for graph-coloring loss
-def loss_func_mod(probs, all_adj_tensor, all_nx_graph):
+def loss_func_mod(probs, all_adj_tensor, nnodes, folder, all_loss):
     """
     Function to compute cost value based on soft assignments (probabilities)
     :param probs: Probability vector, of each node belonging to each class
@@ -334,17 +337,19 @@ def loss_func_mod(probs, all_adj_tensor, all_nx_graph):
     #  Divide by 2 to adjust for symmetry about the diagonal
     cumul = 0
     loss_ = 0
-    for i in range(len(all_nx_graph)):
-        n = all_nx_graph[i].number_of_nodes()
+    for fname in os.listdir(folder):
+        n = nnodes[fname]
         probs_part = probs[cumul:cumul + n, :]
-        loss_ += torch.mul(all_adj_tensor[i], (probs_part @ probs_part.T)).sum() / 2
+        loss_part = torch.mul(all_adj_tensor[fname], (probs_part @ probs_part.T)).sum() / 2
+        all_loss[fname] = loss_part
+        loss_ += loss_part
         cumul += n
 
     return loss_
 
 
 # helper function for custom loss according to Q matrix
-def loss_func_color_hard(coloring, all_nx_graph):
+def loss_func_color_hard(coloring, all_edges, nnodes, all_loss, best_colorings, found_sol, best_costs, folder):
     """
     Function to compute cost value based on color vector (0, 2, 1, 4, 1, ...)
     :param coloring: Vector of class assignments (colors)
@@ -355,20 +360,53 @@ def loss_func_color_hard(coloring, all_nx_graph):
     :rtype: torch.tensor
     """
 
-    cost_ = 0
     cumul = 0
-    for i in range(len(all_nx_graph)):
-        n = all_nx_graph[i].number_of_nodes()
-        coloring_part = coloring[cumul:cumul + n]
-        for (u, v) in all_nx_graph[i].edges:
-            cost_ += 1*(coloring_part[u] == coloring_part[v])*(u != v)
+    for fname in os.listdir(folder):
+        n = nnodes[fname]
+        if (not found_sol[fname]) and all_loss[fname] < 2:
+            coloring_part = coloring[cumul:cumul + n]
+            cost_ = len(all_edges[fname]) - torch.count_nonzero(coloring_part[all_edges[fname][:, 0]]-coloring_part[all_edges[fname][:, 1]])
+            if cost_ == 0:
+                best_costs[fname] = int(cost_)
+                best_colorings[fname] = coloring_part
+                found_sol[fname] = True
+            elif cost_ < best_costs[fname]:
+                best_costs[fname] = int(cost_)
+                best_colorings[fname] = coloring_part
         cumul += n
 
-    return cost_
+
+# helper function for custom loss according to Q matrix
+def loss_func_color_hard_final(coloring, all_edges, nnodes, best_colorings, found_sol, best_costs, folder):
+    """
+    Function to compute cost value based on color vector (0, 2, 1, 4, 1, ...)
+    :param coloring: Vector of class assignments (colors)
+    :type coloring: torch.tensor
+    :param nx_graph: Graph to evaluate classifications on
+    :type nx_graph: networkx.Graph
+    :return: Cost of provided class assignments
+    :rtype: torch.tensor
+    """
+
+    cumul = 0
+    for fname in os.listdir(folder):
+        n = nnodes[fname]
+        if not found_sol[fname]:
+            coloring_part = coloring[cumul:cumul + n]
+            cost_ = len(all_edges[fname]) - torch.count_nonzero(coloring_part[all_edges[fname][:, 0]]-coloring_part[all_edges[fname][:, 1]])
+            if cost_ == 0:
+                best_costs[fname] = int(cost_)
+                best_colorings[fname] = coloring_part
+                found_sol[fname] = True
+            elif cost_ < best_costs[fname]:
+                best_costs[fname] = int(cost_)
+                best_colorings[fname] = coloring_part
+        cumul += n
+    return sum(best_costs.values())
 
 
-def run_gnn_training(all_nx_graph, graph_dgl, all_adj_mat, net, embed, optimizer,
-                                randdim, number_epochs=int(1e5), patience=1000, tolerance=1e-4, seed=1):
+def run_gnn_training(all_edges, all_nnodes_clean, graph_dgl, all_adj_mat, net, embed, optimizer,
+                     randdim, torch_device, folder, number_epochs=int(1e5), patience=1000, tolerance=1e-4, seed=1):
     t_start = time()
 
     """
@@ -401,6 +439,11 @@ def run_gnn_training(all_nx_graph, graph_dgl, all_adj_mat, net, embed, optimizer
     print(f'Function run_gnn_training(): Setting seed to {seed}', flush=True)
     set_seed(seed)
 
+    best_colorings, best_costs, all_loss = init_best(folder)
+    found_sol = {}
+    for fname in os.listdir(folder):
+        found_sol[fname] = False
+
     # Tracking
     
     # Early stopping to allow NN to train to near-completion
@@ -417,8 +460,9 @@ def run_gnn_training(all_nx_graph, graph_dgl, all_adj_mat, net, embed, optimizer
 
         # get cost value with POTTS cost function
         #weight_classes=weight_classes_orig*factor
-        loss = loss_func_mod(probs, all_adj_mat, all_nx_graph)
-
+        loss = loss_func_mod(probs, all_adj_mat, all_nnodes_clean, folder, all_loss)
+        coloring = torch.argmax(probs, 1)
+        loss_func_color_hard(coloring, all_edges, all_nnodes_clean, all_loss, best_colorings, found_sol, best_costs, folder)
         
         if (abs(loss - prev_loss) <= tolerance) | ((loss - prev_loss) > 0):
             cnt += 1
@@ -453,13 +497,18 @@ def run_gnn_training(all_nx_graph, graph_dgl, all_adj_mat, net, embed, optimizer
 
         # tracking: print intermediate loss at regular interval
         if epoch % 500 == 0:
-            free_mem, total_mem = torch.cuda.mem_get_info(device=0)
-            print(f'Epoch {epoch} | Soft Loss: {loss.item():.5f} \
-                   | time: {round(time() - t_start, 4)} |  CPU Usage: {psutil.cpu_percent()} \
-                   | RAM Usage: {psutil.virtual_memory().used / (1024 ** 3)} GB  \
-                   |  GPU memory {torch.cuda.memory_allocated(device=dev) / (1024 ** 3)} GB  \
-                   |  GPU memory free {free_mem / (1024 ** 3)} GB \
-                   |  GPU memory total {total_mem / (1024 ** 3)} GB', flush=True)
+            if torch_device == 'cuda':
+                free_mem, total_mem = torch.cuda.mem_get_info(device=0)
+                print(f'Epoch {epoch} | Soft Loss: {loss.item():.5f} \
+                    | time: {round(time() - t_start, 4)} |  CPU Usage: {psutil.cpu_percent()} \
+                    | RAM Usage: {psutil.virtual_memory().used / (1024 ** 3)} GB  \
+                    |  GPU memory {(total_mem - free_mem) / (1024 ** 3)} GB  \
+                    |  GPU memory free {free_mem / (1024 ** 3)} GB \
+                    |  GPU memory total {total_mem / (1024 ** 3)} GB', flush=True)
+            else:
+                print(f'Epoch {epoch} | Soft Loss: {loss.item():.5f} \
+                    | time: {round(time() - t_start, 4)} |  CPU Usage: {psutil.cpu_percent()} \
+                    | RAM Usage: {psutil.virtual_memory().used / (1024 ** 3)} GB', flush=True)
         epoch += 1
     # Print final loss
     # Final coloring
@@ -467,9 +516,11 @@ def run_gnn_training(all_nx_graph, graph_dgl, all_adj_mat, net, embed, optimizer
     final_coloring = torch.argmax(probs, 1)
     print(f'Final soft loss: {final_loss:.3f}, chromatic_number: {torch.max(final_coloring)+1}', flush=True)
 
-    final_cost = loss_func_color_hard(final_coloring, all_nx_graph)
+    final_cost = loss_func_color_hard_final(final_coloring, all_edges, all_nnodes_clean, best_colorings, 
+                                            found_sol, best_costs, folder)
+
     print('Epoch %d | Final loss: %.5f | Final cost: %.5f' % (epoch, loss.item(), final_cost), flush=True)
 
     
     
-    return losses, final_coloring, final_loss, final_cost
+    return losses, best_colorings, best_costs

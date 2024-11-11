@@ -5,10 +5,10 @@ import numpy as np
 from time import time
 
 
-from Utils_rec_parallel import(get_adjacency_matrix, saver_loss, saver_colorings, 
-                                         saver_colorings_final, saver_others, get_gnn, 
-                                         run_gnn_training, get_full_colors, get_graph_index, 
-                                         SyntheticDataset)
+from Utils_rec_parallel import(saver_loss, saver_colorings, 
+                               saver_colorings_final, saver_others, get_gnn, 
+                               run_gnn_training, get_full_colors, init_best, 
+                               update_best, SyntheticDataset)
 
 
 # Set GPU/CPU
@@ -36,6 +36,7 @@ fileparams = sys.argv[7]
 
 init_seed = int(sys.argv[8])
 ntries = int(sys.argv[9])
+unique_id = sys.argv[10]
 
 randdim, hiddim, dout, lrate = read_params(fileparams)
 
@@ -77,10 +78,7 @@ hypers.update(solver_hypers)
 
         # Get adjacency matrix for use in calculations
 
-graph_index, ngraphs = get_graph_index(folder)
-best_costs = np.full(ngraphs, np.inf)
-best_colorings = [[] for _ in range(ngraphs)]
-best_seed = np.full(ngraphs, np.inf)
+best_colorings, best_costs, best_seeds = init_best(folder)
 
 str_file = f'recurrent_parallel_q_{q}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_ntrials_{ntries}_nep_{nepochs}'
 
@@ -90,24 +88,29 @@ cond = True
 times = []
 while hypers['seed'] < init_seed + ntries and cond:
     t_start = time()
-    data_train = SyntheticDataset(folder)
+    data_train = SyntheticDataset(folder, TORCH_DEVICE, TORCH_DTYPE)
     print('Dataset ready\n', flush=True)
-    all_adj_ = get_adjacency_matrix(data_train.nx_clean_all, TORCH_DEVICE, TORCH_DTYPE)
+    if len(data_train.nnodes_orig) == 0:
+        break
 
     print("\nTrying seed=", hypers['seed'], flush=True)
     net, embed, optimizer = get_gnn(data_train.graph.num_nodes(), hypers, opt_hypers, 
                                     TORCH_DEVICE, TORCH_DTYPE)
 
-    losses, final_coloring, final_loss, final_cost = run_gnn_training(
-            data_train.nx_clean_all, data_train.graph, all_adj_, net, embed, 
-            optimizer, randdim, hypers['number_epochs'], hypers['patience'], hypers['tolerance'], hypers['seed'])
+    losses, best_colorings_seed, best_costs_seed = run_gnn_training(
+            data_train.nx_clean_edges, data_train.nnodes_clean, data_train.graph, data_train.all_adj_matrix, net, embed, 
+            optimizer, randdim, TORCH_DEVICE, data_train.folder, hypers['number_epochs'], hypers['patience'], hypers['tolerance'], hypers['seed'])
     
-    full_colors = get_full_colors(final_coloring, data_train.nx_orig_all, 
-                                  data_train.graph.batch_num_nodes())
-    saver_colorings(full_colors, best_colorings, best_costs, path_colorings, name_start_col, 
-                    data_train, graph_index, hypers['seed'], best_seed)
+    
+    full_best_colors_seed = get_full_colors(best_colorings_seed, data_train.isolated_nodes, data_train.nnodes_orig, data_train.folder)
+    
+    update_best(data_train.folder, best_colorings, best_costs, full_best_colors_seed, best_costs_seed, 
+                hypers['seed'], best_seeds)
+    
+    saver_colorings(full_best_colors_seed, best_costs_seed, path_colorings, name_start_col, 
+                    data_train.folder, data_train.node_offset, hypers['seed'])
 
-    if final_cost < 0.5:
+    if sum(best_costs.values()) < 0.5:
         cond = False
         print("Success with all graphs at seed=", hypers['seed'], flush=True)
     runtime_gnn = round(time() - t_start, 4)
@@ -118,11 +121,11 @@ while hypers['seed'] < init_seed + ntries and cond:
         # report results
 print(f'GNN runtime: {sum(times)}s', flush=True)
 
-loss_filename = "loss_" + str_file
-others_filename = "others_" + str_file
+loss_filename = "loss_" + str_file + "_" + unique_id
+others_filename = "others_" + str_file + "_" + unique_id
 saver_loss(losses, path_loss, loss_filename)
 saver_colorings_final(best_colorings, best_costs, path_colorings, name_start_col, 
-                      data_train, graph_index, best_seed)
+                      data_train.folder, best_seeds)
 others = [hypers['seed'] - 1]
 for i in range(len(times)):
     others.append(times[i])

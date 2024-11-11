@@ -144,6 +144,8 @@ class SyntheticDataset(DGLDataset):
         dgl_graph = dgl.from_networkx(nx_clean, device=dev)        
         self.graph = dgl_graph
 
+        self.edges_list = np.array(self.nxgraph.edges())
+
         if len(lines) == nedges+3:
             self.chr_n = int(lines[nedges+2])
 
@@ -281,7 +283,7 @@ def loss_func_mod(probs, adj_tensor):
 
 
 # helper function for custom loss according to Q matrix
-def loss_func_color_hard(coloring, nx_graph):
+def loss_func_color_hard(coloring, edges_list):
     """
     Function to compute cost value based on color vector (0, 2, 1, 4, 1, ...)
     :param coloring: Vector of class assignments (colors)
@@ -292,14 +294,11 @@ def loss_func_color_hard(coloring, nx_graph):
     :rtype: torch.tensor
     """
 
-    cost_ = 0
-    for (u, v) in nx_graph.edges:
-        cost_ += 1*(coloring[u] == coloring[v])*(u != v) #for self loops loss func not to be incremented obv.
-
+    cost_ = len(edges_list) - torch.count_nonzero(coloring[edges_list[:, 0]]-coloring[edges_list[:, 1]])
     return cost_
 
 
-def run_gnn_training_early_stop(graphname, nx_graph, graph_dgl, adj_mat, net, embed, optimizer,
+def run_gnn_training_early_stop(graphname, edges_list, graph_dgl, adj_mat, net, embed, optimizer,
                                 randdim, number_epochs=int(1e5), patience=1000, tolerance=1e-4, seed=1):
     t_start = time()
 
@@ -358,7 +357,7 @@ def run_gnn_training_early_stop(graphname, nx_graph, graph_dgl, adj_mat, net, em
         # update cost if applicable
         if loss.item() < 2: 
             coloring = torch.argmax(probs, dim=1)
-            cost_hard = loss_func_color_hard(coloring, nx_graph)
+            cost_hard = loss_func_color_hard(coloring, edges_list)
         
             if cost_hard < best_cost:
                 best_loss = loss
@@ -411,7 +410,7 @@ def run_gnn_training_early_stop(graphname, nx_graph, graph_dgl, adj_mat, net, em
     final_coloring = torch.argmax(probs, 1)
     print(f'Final coloring: {final_coloring}, soft loss: {final_loss:.3f}, chromatic_number: {torch.max(coloring)+1}')
 
-    final_cost = loss_func_color_hard(final_coloring, nx_graph)
+    final_cost = loss_func_color_hard(final_coloring, edges_list)
     if final_cost < best_cost:
         best_loss = loss
         best_cost = final_cost

@@ -144,6 +144,8 @@ class SyntheticDataset(DGLDataset):
         dgl_graph = dgl.from_networkx(nx_clean, device=dev)        
         self.graph = dgl_graph
 
+        self.edges_list = np.array(self.nxgraph.edges())
+
         if len(lines) == nedges+3:
             self.chr_n = int(lines[nedges+2])
 
@@ -281,7 +283,7 @@ def loss_func_mod(probs, adj_tensor):
 
 
 # helper function for custom loss according to Q matrix
-def loss_func_color_hard(coloring, nx_graph):
+def loss_func_color_hard(coloring, edges_list):
     """
     Function to compute cost value based on color vector (0, 2, 1, 4, 1, ...)
     :param coloring: Vector of class assignments (colors)
@@ -292,14 +294,11 @@ def loss_func_color_hard(coloring, nx_graph):
     :rtype: torch.tensor
     """
 
-    cost_ = 0
-    for (u, v) in nx_graph.edges:
-        cost_ += 1*(coloring[u] == coloring[v])*(u != v) #for self loops loss func not to be incremented obv.
-
+    cost_ = len(edges_list) - torch.count_nonzero(coloring[edges_list[:, 0]]-coloring[edges_list[:, 1]])
     return cost_
 
 
-def run_gnn_training_early_stop(graphname, nx_graph, graph_dgl, adj_mat, net, embed, optimizer,
+def run_gnn_training_early_stop(graphname, edges_list, graph_dgl, adj_mat, net, embed, optimizer,
                                 randdim, number_epochs=int(1e5), patience=1000, tolerance=1e-4, seed=1):
     t_start = time()
 
@@ -360,7 +359,7 @@ def run_gnn_training_early_stop(graphname, nx_graph, graph_dgl, adj_mat, net, em
         # get cost based on current hard class assignments
         # update cost if applicable
 
-        cost_hard = loss_func_color_hard(coloring, nx_graph)
+        cost_hard = loss_func_color_hard(coloring, edges_list)
         
         #if cost_hard.item()==0 or cost_hard.item()==1:
         #    weight_classes=weight_classes_orig #if it's already 0 (or 1), challenge the net to explore low occupancy colours encodings.
