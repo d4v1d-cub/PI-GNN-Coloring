@@ -497,7 +497,7 @@ def run_gnn_training(all_edges, all_nnodes_clean, graph_dgl, all_adj_mat, net, e
 
         # tracking: print intermediate loss at regular interval
         if epoch % 500 == 0:
-            if torch_device == 'cuda':
+            if torch.cuda.is_available():
                 free_mem, total_mem = torch.cuda.mem_get_info(device=0)
                 print(f'Epoch {epoch} | Soft Loss: {loss.item():.5f} \
                     | time: {round(time() - t_start, 4)} |  CPU Usage: {psutil.cpu_percent()} \
