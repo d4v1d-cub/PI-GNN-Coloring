@@ -408,7 +408,7 @@ def run_gnn_training_early_stop(graphname, edges_list, graph_dgl, adj_mat, net, 
     # Final coloring
     final_loss = loss
     final_coloring = torch.argmax(probs, 1)
-    print(f'Final coloring: {final_coloring}, soft loss: {final_loss:.3f}, chromatic_number: {torch.max(coloring)+1}')
+    print(f'Final coloring: {final_coloring}, soft loss: {final_loss:.3f}, chromatic_number: {torch.max(final_coloring)+1}')
 
     final_cost = loss_func_color_hard(final_coloring, edges_list)
     if final_cost < best_cost:
