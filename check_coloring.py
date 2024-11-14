@@ -268,10 +268,10 @@ ntrials = 5
 nepochs_list = 100 * np.array(N_list)
 
 graph_version = "New_graphs"
-# processor = "CPU"
-processor = "GPU"
-# program_version = "less_hardloss"
-program_version = "parallel"
+processor = "CPU"
+# processor = "GPU"
+program_version = "less_hardloss"
+# program_version = "parallel"
 
 
 path_to_cols = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/{processor}/{program_version}/q_{q}/{graph_version}/colorings'
