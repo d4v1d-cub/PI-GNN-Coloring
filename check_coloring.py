@@ -114,7 +114,7 @@ def check_orig(filecols, path_to_graph, graphname, q=3):
             print(f'The graph "{graphname}" is NOT well colored with q={q}')
             return False, True
     except (IOError, OSError):
-        print(f'file "{filecols}" not found')
+        # print(f'file "{filecols}" not found')
         return False, False
 
 
@@ -171,7 +171,7 @@ def check_all_hyperopt(N_list, c_list, q, seedmin, seedmax, path_to_graph, path_
 
 
 def check_all_rec(N_list, c_list, q, seedmin, seedmax, path_to_graph, path_to_cols, 
-                  fileout, path_to_params, ntrials, nepochs):
+                  fileout, path_to_params, ntrials, nepochs, str_program):
     fout = open(fileout, "w")
     fout.write("# N  c  nsamples  solved\n")
     for N in N_list:
@@ -184,7 +184,7 @@ def check_all_rec(N_list, c_list, q, seedmin, seedmax, path_to_graph, path_to_co
             for seed in range(seedmin, seedmax + 1):
                 m = int(round(N * c / 2))
                 graphname = f'ErdosRenyi_N_{N}_M_{m}_id_{seed}.txt'
-                filecols = f'{path_to_cols}/coloring_recurrent_q_{q}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_ntrials_{ntrials}_nep_{nepochs}_filename_{graphname}'
+                filecols = f'{path_to_cols}/coloring_recurrent_{str_program}_q_{q}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_ntrials_{ntrials}_nep_{nepochs}_filename_{graphname}'
                 colored, found = check_orig(filecols, path_to_graph_new, graphname, q)
                 solved += colored
                 nsamples += found
@@ -256,7 +256,7 @@ path_to_graph = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Co
 # N_list = [16, 32, 64, 128, 256, 512, 1024]
 # N_list = [128, 256, 512, 1024]
 # N_list = [2048, 4096, 8192]
-N_list = [1024, 2048, 4096, 8192]
+N_list = [128, 256, 512, 1024, 2048, 4096, 8192]
 c_list = np.arange(2.96, 5.01, 0.18)
 q = 3
 # c_list = np.arange(9.9, 13.5, 0.4)
@@ -264,14 +264,16 @@ q = 3
 seedmin = 1
 seedmax = 400
 ntrials = 5
-# nepochs = int(1e5)
-nepochs_list = 100 * np.array(N_list)
+nepochs = 102400
+# nepochs_list = 100 * np.array(N_list)
+# for i in range(3):
+#     nepochs_list[i] = 100000
 
 graph_version = "New_graphs"
-processor = "CPU"
-# processor = "GPU"
-program_version = "less_hardloss"
-# program_version = "parallel"
+# processor = "CPU"
+processor = "GPU"
+# program_version = "less_hardloss"
+program_version = "parallel"
 
 
 path_to_cols = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/{processor}/{program_version}/q_{q}/{graph_version}/colorings'
@@ -279,13 +281,13 @@ path_to_cols = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Col
 path_to_params = "/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/params"
 
 path_out = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/{processor}/{program_version}/q_{q}/{graph_version}/Stats/'
-# fileout = path_out + f'Solved_recurrent_q_{q}_ErdosRenyi_ntrials_{ntrials}_nep_{nepochs}.txt'
+fileout = path_out + f'Solved_recurrent_q_{q}_ErdosRenyi_ntrials_{ntrials}_nep_{nepochs}.txt'
 # fileout = path_out + f'Solved_recurrent_q_{q}_ErdosRenyi_ntrials_{ntrials}_nep_{nepochs}_largeN.txt'
-fileout = path_out + f'Solved_recurrent_q_{q}_ErdosRenyi_ntrials_{ntrials}_nep_100N.txt'
+# fileout = path_out + f'Solved_recurrent_q_{q}_ErdosRenyi_ntrials_{ntrials}_nep_100N.txt'
 
-# solv_frac = check_all_rec(N_list, c_list, q, seedmin, seedmax, path_to_graph, path_to_cols,
-#                           fileout, path_to_params, ntrials, nepochs)
+solv_frac = check_all_rec(N_list, c_list, q, seedmin, seedmax, path_to_graph, path_to_cols,
+                          fileout, path_to_params, ntrials, nepochs, program_version)
 
 
-solv_frac = check_all_rec_varnep(N_list, c_list, q, seedmin, seedmax, path_to_graph, path_to_cols,
-                          fileout, path_to_params, ntrials, nepochs_list, program_version)
+# solv_frac = check_all_rec_varnep(N_list, c_list, q, seedmin, seedmax, path_to_graph, path_to_cols,
+                        #   fileout, path_to_params, ntrials, nepochs_list, program_version)

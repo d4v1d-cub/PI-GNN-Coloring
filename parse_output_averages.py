@@ -203,6 +203,8 @@ seedmax = 400
 ntrials = 5
 # nepochs = int(1e5)
 nepochs_list = 100 * np.array(N_list)
+for i in range(3):
+    nepochs_list[i] = 100000
 
 path_to_graph = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/random_graphs/ErdosRenyi/{graph_version}/'
 
