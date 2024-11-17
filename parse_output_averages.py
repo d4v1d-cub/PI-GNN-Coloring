@@ -9,7 +9,7 @@ def read_params(fileparams):
     return int(line[0]), int(line[1]), float(line[2]), float(line[3])
 
 
-def read_others(fileothers):
+def read_others(fileothers, nepochs_max):
     try:
         fin = open(fileothers, "r")
     except (IOError, OSError):
@@ -20,7 +20,11 @@ def read_others(fileothers):
         print(f'file "{fileothers}" is empty')
         return -1, -1, -1, False
     line = j.split()
-    return int(line[0]), float(line[1]), int(line[3]), True
+    seed_success = int(line[2])
+    if seed_success > 0:
+        return int(line[0]), float(line[1]), nepochs_max, True
+    else:
+        return int(line[0]), float(line[1]), int(line[3]), True
 
 
 def read_loss(fileloss):
@@ -39,7 +43,7 @@ def read_loss(fileloss):
 
 
 def parse_all_old(N_list, c_list, q, seedmin, seedmax, path_to_others, 
-                  fileout, path_to_params, ntrials):
+                  fileout, path_to_params, ntrials, nepochs_max):
     fout = open(fileout, "w")
     fout.write("# N  c  nsamples  P(sol)   av(E)   std(E)   av(runtime)[s]  std(runtime)[s]    av(nepochs)    std(nepochs)\n")
     for N in N_list:
@@ -57,7 +61,7 @@ def parse_all_old(N_list, c_list, q, seedmin, seedmax, path_to_others,
             for seed in range(seedmin, seedmax + 1):
                 graphname = f'ErdosRenyi_N_{N}_c_{"{0:.3f}".format(c)}_id_{seed}.txt'
                 fileothers = f'{path_to_others}/others_recurrent_q_{q}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_ntrials_{ntrials}_filename_{graphname}'
-                e, runtime, nep, found = read_others(fileothers)
+                e, runtime, nep, found = read_others(fileothers, nepochs_max)
                 if found:
                     print(f'file {fileothers} read')
                     nsamples += 1
@@ -87,7 +91,7 @@ def parse_all_old(N_list, c_list, q, seedmin, seedmax, path_to_others,
 
 
 def parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others, 
-              fileout, path_to_params, ntrials, nepochs):
+              fileout, path_to_params, ntrials, nepochs_max):
     fout = open(fileout, "w")
     fout.write("# N  c  nsamples  P(sol)   av(E)   std(E)   av(runtime)[s]  std(runtime)[s]    av(nepochs)    std(nepochs)\n")
     for N in N_list:
@@ -105,8 +109,8 @@ def parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others,
             for seed in range(seedmin, seedmax + 1):
                 m = int(round(N * c / 2))
                 graphname = f'ErdosRenyi_N_{N}_M_{m}_id_{seed}.txt'
-                fileothers = f'{path_to_others}/others_recurrent_q_{q}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_ntrials_{ntrials}_nep_{nepochs}_filename_{graphname}'
-                e, runtime, nep, found = read_others(fileothers)
+                fileothers = f'{path_to_others}/others_recurrent_q_{q}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_ntrials_{ntrials}_nep_{nepochs_max}_filename_{graphname}'
+                e, runtime, nep, found = read_others(fileothers, nepochs_max)
                 if found:
                     print(f'file {fileothers} read')
                     nsamples += 1
@@ -141,7 +145,7 @@ def parse_all_varnep(N_list, c_list, q, seedmin, seedmax, path_to_others,
     fout.write("# N  c  nsamples  P(sol)   av(E)   std(E)   av(runtime)[s]  std(runtime)[s]    av(nepochs)    std(nepochs)\n")
     for j in range(len(N_list)):
         N = N_list[j]
-        nepochs = nepochs_list[j]
+        nepochs_max = nepochs_list[j]
         for c in c_list:
             nsamples = 0
             solved = 0.0
@@ -156,8 +160,8 @@ def parse_all_varnep(N_list, c_list, q, seedmin, seedmax, path_to_others,
             for seed in range(seedmin, seedmax + 1):
                 m = int(round(N * c / 2))
                 graphname = f'ErdosRenyi_N_{N}_M_{m}_id_{seed}.txt'
-                fileothers = f'{path_to_others}/others_recurrent_{str_program}_q_{q}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_ntrials_{ntrials}_nep_{nepochs}_filename_{graphname}'
-                e, runtime, nep, found = read_others(fileothers)
+                fileothers = f'{path_to_others}/others_recurrent_{str_program}_q_{q}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_ntrials_{ntrials}_nep_{nepochs_max}_filename_{graphname}'
+                e, runtime, nep, found = read_others(fileothers, nepochs_max)
                 if found:
                     print(f'file {fileothers} read')
                     nsamples += 1
@@ -188,7 +192,8 @@ def parse_all_varnep(N_list, c_list, q, seedmin, seedmax, path_to_others,
 
 graph_version = "New_graphs"
 processor = "CPU"
-program_version = "less_hardloss"
+# program_version = "less_hardloss"
+program_version = "all_hardloss"
 
 
 
@@ -201,10 +206,10 @@ q = 3
 seedmin = 1
 seedmax = 400
 ntrials = 5
-# nepochs = int(1e5)
-nepochs_list = 100 * np.array(N_list)
-for i in range(3):
-    nepochs_list[i] = 100000
+nepochs = int(1e5)
+# nepochs_list = 100 * np.array(N_list)
+# for i in range(3):
+    # nepochs_list[i] = 100000
 
 path_to_graph = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/random_graphs/ErdosRenyi/{graph_version}/'
 
@@ -219,13 +224,13 @@ path_out = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Colorin
 # fileout = path_out + f'Full_Stats_recurrent_q_{q}_ErdosRenyi_ntrials_{ntrials}_nep_{nepochs}_large_N.txt'
 fileout = path_out + f'Full_Stats_recurrent_q_{q}_ErdosRenyi_ntrials_{ntrials}_nep_100N.txt'
 
-# parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others, fileout, path_to_params, 
-        #   ntrials, nepochs)
+parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others, fileout, path_to_params, 
+          ntrials, nepochs)
 
 
 # parse_all_old(N_list, c_list, q, seedmin, seedmax, path_to_others,
-            #   fileout, path_to_params, ntrials)
+            #   fileout, path_to_params, ntrials, nepochs)
 
 
-parse_all_varnep(N_list, c_list, q, seedmin, seedmax, path_to_others, fileout, path_to_params, 
-          ntrials, nepochs_list, program_version)
+# parse_all_varnep(N_list, c_list, q, seedmin, seedmax, path_to_others, fileout, path_to_params, 
+        #   ntrials, nepochs_list, program_version)

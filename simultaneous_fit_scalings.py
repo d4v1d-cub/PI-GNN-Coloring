@@ -101,7 +101,9 @@ def sample_data_from_fit(params, n_max, path, filedata):
 def main():
     q = 3
     ntrials = 'combined'
+    # ntrials = 5
     nep = int(1e5)
+    # nep = "100N"
     n_min = 512
     c_min = 3.5
     c_max = 3.86
@@ -115,10 +117,13 @@ def main():
     else:
         print(f'Unknown column for the data on: {data_kind}')
 
-    version = "New_graphs"
+    graph_version = "New_graphs"
     processor = "CPU"
+    # program_version = "less_hardloss"
+    program_version = "all_hardloss"
     
-    path_to_data = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/{processor}/q_{q}/{version}/Stats'
+    path_to_data = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/{processor}/{program_version}/q_{q}/{graph_version}/Stats'
+
     filein = f'Full_Stats_recurrent_q_{q}_ErdosRenyi_ntrials_{ntrials}_nep_{nep}.txt'
     fileout = f'fit_pars_{data_kind}_recurrent_q_{q}_ErdosRenyi_ntrials_{ntrials}_nep_{nep}_Nmin_{n_min}_cmin_{c_min}_cmax_{c_max}.txt'
     filedata = f'fit_samples_{data_kind}_recurrent_q_{q}_ErdosRenyi_ntrials_{ntrials}_nep_{nep}_Nmin_{n_min}_cmin_{c_min}_cmax_{c_max}.txt'
