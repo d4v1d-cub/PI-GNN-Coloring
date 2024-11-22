@@ -253,41 +253,42 @@ def check_all_rec_varnep(N_list, c_list, q, seedmin, seedmax, path_to_graph, pat
 path_to_graph = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/random_graphs/ErdosRenyi/New_graphs/'
 
 
-# N_list = [16, 32, 64, 128, 256, 512, 1024]
-# N_list = [128, 256, 512, 1024]
-# N_list = [2048, 4096, 8192]
 N_list = [128, 256, 512, 1024, 2048, 4096, 8192]
-c_list = np.arange(2.96, 5.01, 0.18)
-q = 3
-# c_list = np.arange(9.9, 13.5, 0.4)
-# q = 5
+# c_list = np.arange(2.96, 5.01, 0.18)
+# q = 3
+c_list = np.arange(9.9, 13.5, 0.4)
+q = 5
 seedmin = 1
 seedmax = 400
 ntrials = 5
-nepochs = 102400
-# nepochs_list = 100 * np.array(N_list)
-# for i in range(3):
-#     nepochs_list[i] = 100000
+# nepochs = 300000
+
+# Q=3
+# nepochs_list = [100000, 100000, 100000, 102400, 204800, 409600, 819200]
+
+# Q=5
+nepochs_list = [102400, 102400, 102400, 102400, 204800, 409600, 819200]
 
 graph_version = "New_graphs"
-# processor = "CPU"
-processor = "GPU"
-# program_version = "less_hardloss"
-program_version = "parallel"
+processor = "CPU"
+# processor = "GPU"
+program_version = "less_hardloss"
+# program_version = "parallel"
 
+# cluster=""
+cluster="_dresden"
 
-path_to_cols = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/{processor}/{program_version}/q_{q}/{graph_version}/colorings'
+path_to_cols = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/{processor}/{program_version}/q_{q}/{graph_version}/colorings{cluster}'
 
 path_to_params = "/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/params"
 
 path_out = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/{processor}/{program_version}/q_{q}/{graph_version}/Stats/'
-fileout = path_out + f'Solved_recurrent_q_{q}_ErdosRenyi_ntrials_{ntrials}_nep_{nepochs}.txt'
-# fileout = path_out + f'Solved_recurrent_q_{q}_ErdosRenyi_ntrials_{ntrials}_nep_{nepochs}_largeN.txt'
-# fileout = path_out + f'Solved_recurrent_q_{q}_ErdosRenyi_ntrials_{ntrials}_nep_100N.txt'
+# fileout = path_out + f'Solved_recurrent_q_{q}_ErdosRenyi_ntrials_{ntrials}_nep_{nepochs}.txt'
+fileout = path_out + f'Solved_recurrent{cluster}_q_{q}_ErdosRenyi_ntrials_{ntrials}_nep_100N.txt'
 
-solv_frac = check_all_rec(N_list, c_list, q, seedmin, seedmax, path_to_graph, path_to_cols,
-                          fileout, path_to_params, ntrials, nepochs, program_version)
+# solv_frac = check_all_rec(N_list, c_list, q, seedmin, seedmax, path_to_graph, path_to_cols,
+                        #   fileout, path_to_params, ntrials, nepochs, program_version)
 
 
-# solv_frac = check_all_rec_varnep(N_list, c_list, q, seedmin, seedmax, path_to_graph, path_to_cols,
-                        #   fileout, path_to_params, ntrials, nepochs_list, program_version)
+solv_frac = check_all_rec_varnep(N_list, c_list, q, seedmin, seedmax, path_to_graph, path_to_cols,
+                          fileout, path_to_params, ntrials, nepochs_list, program_version)

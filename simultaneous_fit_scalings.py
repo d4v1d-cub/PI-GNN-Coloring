@@ -100,13 +100,13 @@ def sample_data_from_fit(params, n_max, path, filedata):
 
 def main():
     q = 3
-    ntrials = 'combined'
-    # ntrials = 5
-    nep = int(1e5)
-    # nep = "100N"
+    # ntrials = 'combined'
+    ntrials = 5
+    # nep = int(1e5)
+    nep = "100N"
     n_min = 512
     c_min = 3.5
-    c_max = 3.86
+    c_max = 3.68
     data_kind = 'nepochs'
     n_max = 10000
 
@@ -119,8 +119,8 @@ def main():
 
     graph_version = "New_graphs"
     processor = "CPU"
-    # program_version = "less_hardloss"
-    program_version = "all_hardloss"
+    program_version = "less_hardloss"
+    # program_version = "all_hardloss"
     
     path_to_data = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/{processor}/{program_version}/q_{q}/{graph_version}/Stats'
 
