@@ -45,7 +45,7 @@ def read_loss(fileloss):
 def parse_all_old(N_list, c_list, q, seedmin, seedmax, path_to_others, 
                   fileout, path_to_params, ntrials, nepochs_max):
     fout = open(fileout, "w")
-    fout.write("# N  c  nsamples  P(sol)   av(E)   std(E)   av(runtime)[s]  std(runtime)[s]    av(nepochs)    std(nepochs)\n")
+    fout.write("# N  c  nsamples  P(sol)   av(E)   std(E)   av(runtime)[s]  std(runtime)[s]   av(runtime(Solved))  str(runtime(Solved))   av(nepochs)    std(nepochs)   av(nepochs(Solved))   str(nepochs(Solved))\n")
     for N in N_list:
         for c in c_list:
             nsamples = 0
@@ -56,8 +56,12 @@ def parse_all_old(N_list, c_list, q, seedmin, seedmax, path_to_others,
             av_e_sqr = 0.0
             av_runtime = 0.0
             av_runtime_sqr = 0.0
+            av_runtime_solved = 0.0
+            av_runtime_solved_sqr = 0.0
             av_nep = 0.0
             av_nep_sqr = 0.0
+            av_nep_solved = 0.0
+            av_nep_solved_sqr = 0.0
             for seed in range(seedmin, seedmax + 1):
                 graphname = f'ErdosRenyi_N_{N}_c_{"{0:.3f}".format(c)}_id_{seed}.txt'
                 fileothers = f'{path_to_others}/others_recurrent_q_{q}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_ntrials_{ntrials}_filename_{graphname}'
@@ -67,6 +71,10 @@ def parse_all_old(N_list, c_list, q, seedmin, seedmax, path_to_others,
                     nsamples += 1
                     if e == 0:
                         solved += 1
+                        av_runtime_solved += runtime
+                        av_runtime_solved_sqr += runtime ** 2
+                        av_nep_solved += nep
+                        av_nep_solved_sqr += nep ** 2
                     av_e += e
                     av_e_sqr += e ** 2
                     av_runtime += runtime
@@ -78,22 +86,30 @@ def parse_all_old(N_list, c_list, q, seedmin, seedmax, path_to_others,
                 av_e_sqr /= nsamples
                 av_runtime /= nsamples
                 av_runtime_sqr /= nsamples
+                av_runtime_solved /= nsamples
+                av_runtime_solved_sqr /= nsamples
                 av_nep /= nsamples
                 av_nep_sqr /= nsamples
+                av_nep_solved /= nsamples
+                av_nep_solved_sqr /= nsamples
+
 
                 std_e = np.sqrt((av_e_sqr - av_e * av_e) / nsamples)
                 std_runtime = np.sqrt((av_runtime_sqr - av_runtime * av_runtime) / nsamples)
                 std_nep = np.sqrt((av_nep_sqr - av_nep * av_nep) / nsamples)
+                std_runtime_solved = np.sqrt((av_runtime_solved_sqr - av_runtime_solved * av_runtime_solved) / nsamples)
+                std_nep_solved = np.sqrt((av_nep_solved_sqr - av_nep_solved * av_nep_solved) / nsamples)
 
                 fout.write(str(N) + "\t" + str(c) + "\t" + str(nsamples) + "\t" + str(solved / nsamples) + "\t" + str(av_e) + "\t" + str(std_e)
-                            + "\t" + str(av_runtime) + "\t" + str(std_runtime) + "\t" + str(av_nep) + "\t" + str(std_nep) + "\n")
+                            + "\t" + str(av_runtime) + "\t" + str(std_runtime) + "\t" + str(av_runtime_solved) + "\t" + str(std_runtime_solved)
+                            + "\t" + str(av_nep) + "\t" + str(std_nep) + "\t" + str(av_nep_solved) + "\t" + str(std_nep_solved) + "\n")
     fout.close()
 
 
 def parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others, 
               fileout, path_to_params, ntrials, nepochs_max):
     fout = open(fileout, "w")
-    fout.write("# N  c  nsamples  P(sol)   av(E)   std(E)   av(runtime)[s]  std(runtime)[s]    av(nepochs)    std(nepochs)\n")
+    fout.write("# N  c  nsamples  P(sol)   av(E)   std(E)   av(runtime)[s]  std(runtime)[s]   av(runtime(Solved))  str(runtime(Solved))   av(nepochs)    std(nepochs)   av(nepochs(Solved))   str(nepochs(Solved))\n")
     for N in N_list:
         for c in c_list:
             nsamples = 0
@@ -104,8 +120,12 @@ def parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others,
             av_e_sqr = 0.0
             av_runtime = 0.0
             av_runtime_sqr = 0.0
+            av_runtime_solved = 0.0
+            av_runtime_solved_sqr = 0.0
             av_nep = 0.0
             av_nep_sqr = 0.0
+            av_nep_solved = 0.0
+            av_nep_solved_sqr = 0.0
             for seed in range(seedmin, seedmax + 1):
                 m = int(round(N * c / 2))
                 graphname = f'ErdosRenyi_N_{N}_M_{m}_id_{seed}.txt'
@@ -116,6 +136,10 @@ def parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others,
                     nsamples += 1
                     if e == 0:
                         solved += 1
+                        av_runtime_solved += runtime
+                        av_runtime_solved_sqr += runtime ** 2
+                        av_nep_solved += nep
+                        av_nep_solved_sqr += nep ** 2
                     av_e += e
                     av_e_sqr += e ** 2
                     av_runtime += runtime
@@ -127,22 +151,29 @@ def parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others,
                 av_e_sqr /= nsamples
                 av_runtime /= nsamples
                 av_runtime_sqr /= nsamples
+                av_runtime_solved /= nsamples
+                av_runtime_solved_sqr /= nsamples
                 av_nep /= nsamples
                 av_nep_sqr /= nsamples
+                av_nep_solved /= nsamples
+                av_nep_solved_sqr /= nsamples
 
                 std_e = np.sqrt((av_e_sqr - av_e * av_e) / nsamples)
                 std_runtime = np.sqrt((av_runtime_sqr - av_runtime * av_runtime) / nsamples)
                 std_nep = np.sqrt((av_nep_sqr - av_nep * av_nep) / nsamples)
+                std_runtime_solved = np.sqrt((av_runtime_solved_sqr - av_runtime_solved * av_runtime_solved) / nsamples)
+                std_nep_solved = np.sqrt((av_nep_solved_sqr - av_nep_solved * av_nep_solved) / nsamples)
 
                 fout.write(str(N) + "\t" + str("{0:.3f}".format(c)) + "\t" + str(nsamples) + "\t" + str(solved / nsamples) + "\t" + str(av_e) + "\t" + str(std_e)
-                            + "\t" + str(av_runtime) + "\t" + str(std_runtime) + "\t" + str(av_nep) + "\t" + str(std_nep) + "\n")
+                            + "\t" + str(av_runtime) + "\t" + str(std_runtime) + "\t" + str(av_runtime_solved) + "\t" + str(std_runtime_solved)
+                            + "\t" + str(av_nep) + "\t" + str(std_nep) + "\t" + str(av_nep_solved) + "\t" + str(std_nep_solved) + "\n")
     fout.close()
 
 
 def parse_all_varnep(N_list, c_list, q, seedmin, seedmax, path_to_others, 
               fileout, path_to_params, ntrials, nepochs_list, str_program):
     fout = open(fileout, "w")
-    fout.write("# N  c  nsamples  P(sol)   av(E)   std(E)   av(runtime)[s]  std(runtime)[s]    av(nepochs)    std(nepochs)\n")
+    fout.write("# N  c  nsamples  P(sol)   av(E)   std(E)   av(runtime)[s]  std(runtime)[s]   av(runtime(Solved))  str(runtime(Solved))   av(nepochs)    std(nepochs)   av(nepochs(Solved))   str(nepochs(Solved))\n")
     for j in range(len(N_list)):
         N = N_list[j]
         nepochs_max = nepochs_list[j]
@@ -155,8 +186,12 @@ def parse_all_varnep(N_list, c_list, q, seedmin, seedmax, path_to_others,
             av_e_sqr = 0.0
             av_runtime = 0.0
             av_runtime_sqr = 0.0
+            av_runtime_solved = 0.0
+            av_runtime_solved_sqr = 0.0
             av_nep = 0.0
             av_nep_sqr = 0.0
+            av_nep_solved = 0.0
+            av_nep_solved_sqr = 0.0
             for seed in range(seedmin, seedmax + 1):
                 m = int(round(N * c / 2))
                 graphname = f'ErdosRenyi_N_{N}_M_{m}_id_{seed}.txt'
@@ -167,6 +202,10 @@ def parse_all_varnep(N_list, c_list, q, seedmin, seedmax, path_to_others,
                     nsamples += 1
                     if e == 0:
                         solved += 1
+                        av_runtime_solved += runtime
+                        av_runtime_solved_sqr += runtime ** 2
+                        av_nep_solved += nep
+                        av_nep_solved_sqr += nep ** 2
                     av_e += e
                     av_e_sqr += e ** 2
                     av_runtime += runtime
@@ -178,15 +217,22 @@ def parse_all_varnep(N_list, c_list, q, seedmin, seedmax, path_to_others,
                 av_e_sqr /= nsamples
                 av_runtime /= nsamples
                 av_runtime_sqr /= nsamples
+                av_runtime_solved /= nsamples
+                av_runtime_solved_sqr /= nsamples
                 av_nep /= nsamples
                 av_nep_sqr /= nsamples
+                av_nep_solved /= nsamples
+                av_nep_solved_sqr /= nsamples
 
                 std_e = np.sqrt((av_e_sqr - av_e * av_e) / nsamples)
                 std_runtime = np.sqrt((av_runtime_sqr - av_runtime * av_runtime) / nsamples)
                 std_nep = np.sqrt((av_nep_sqr - av_nep * av_nep) / nsamples)
+                std_runtime_solved = np.sqrt((av_runtime_solved_sqr - av_runtime_solved * av_runtime_solved) / nsamples)
+                std_nep_solved = np.sqrt((av_nep_solved_sqr - av_nep_solved * av_nep_solved) / nsamples)
 
                 fout.write(str(N) + "\t" + str("{0:.3f}".format(c)) + "\t" + str(nsamples) + "\t" + str(solved / nsamples) + "\t" + str(av_e) + "\t" + str(std_e)
-                            + "\t" + str(av_runtime) + "\t" + str(std_runtime) + "\t" + str(av_nep) + "\t" + str(std_nep) + "\n")
+                            + "\t" + str(av_runtime) + "\t" + str(std_runtime) + "\t" + str(av_runtime_solved) + "\t" + str(std_runtime_solved)
+                            + "\t" + str(av_nep) + "\t" + str(std_nep) + "\t" + str(av_nep_solved) + "\t" + str(std_nep_solved) + "\n")
     fout.close()
 
 
@@ -199,20 +245,20 @@ cluster="_dresden"
 
 
 N_list = [128, 256, 512, 1024, 2048, 4096, 8192]
-c_list = np.arange(3.32, 5.01, 0.18)
-q = 3
-# c_list = np.arange(9.9, 13.5, 0.4)
-# q = 5
+# c_list = np.arange(3.32, 5.01, 0.18)
+# q = 3
+c_list = np.arange(9.9, 13.5, 0.4)
+q = 5
 seedmin = 1
 seedmax = 400
 ntrials = 5
 # nepochs = int(1e5)
 
 # Q=3
-nepochs_list = [100000, 100000, 100000, 102400, 204800, 409600, 819200]
+# nepochs_list = [100000, 100000, 100000, 102400, 204800, 409600, 819200]
 
 # Q=5
-# nepochs_list = [102400, 102400, 102400, 102400, 204800, 409600, 819200]
+nepochs_list = [102400, 102400, 102400, 102400, 204800, 409600, 819200]
 
 path_to_graph = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/random_graphs/ErdosRenyi/{graph_version}/'
 
