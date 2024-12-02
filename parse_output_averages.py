@@ -240,25 +240,25 @@ graph_version = "New_graphs"
 processor = "CPU"
 program_version = "less_hardloss"
 # program_version = "all_hardloss"
-# cluster=""
-cluster="_dresden"
+cluster=""
+# cluster="_dresden"
 
 
-N_list = [128, 256, 512, 1024, 2048, 4096, 8192]
-# c_list = np.arange(3.32, 5.01, 0.18)
-# q = 3
-c_list = np.arange(9.9, 13.5, 0.4)
-q = 5
+N_list = [128, 256, 512, 1024, 2048, 4096, 8192, 16384]
+c_list = np.arange(3.32, 5.01, 0.18)
+q = 3
+# c_list = np.arange(9.9, 13.5, 0.4)
+# q = 5
 seedmin = 1
 seedmax = 400
 ntrials = 5
 # nepochs = int(1e5)
 
 # Q=3
-# nepochs_list = [100000, 100000, 100000, 102400, 204800, 409600, 819200]
+nepochs_list = [100000, 100000, 100000, 102400, 204800, 409600, 819200, 1638400]
 
 # Q=5
-nepochs_list = [102400, 102400, 102400, 102400, 204800, 409600, 819200]
+# nepochs_list = [102400, 102400, 102400, 102400, 204800, 409600, 819200]
 
 path_to_graph = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/random_graphs/ErdosRenyi/{graph_version}/'
 
