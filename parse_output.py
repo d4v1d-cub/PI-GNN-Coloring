@@ -56,7 +56,7 @@ def parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others_list, path_to_
                     l += 1
 
                 if not found:
-                    nepochs = nepochs_par
+                    nepochs = nepochs_par[j]
                     m = int(round(N * c / 2))
                     graphname = f'ErdosRenyi_N_{N}_M_{m}_id_{seed}.txt'
                     filecols = f'{path_to_cols}/coloring_recurrent_parallel_q_{q}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_ntrials_{ntrials}_nep_{nepochs}_filename_{graphname}'
@@ -73,20 +73,20 @@ def parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others_list, path_to_
 
 
 N_list = [128, 256, 512, 1024, 2048, 4096, 8192]
-# c_list = np.arange(2.96, 5.01, 0.18)
-# q = 3
-c_list = np.arange(9.9, 13.5, 0.4)
-q = 5
+c_list = np.arange(2.96, 5.01, 0.18)
+q = 3
+# c_list = np.arange(9.9, 13.5, 0.4)
+# q = 5
 seedmin = 1
 seedmax = 400
 ntrials = 5
-nepochs_par = 600000
+nepochs_par = [600000, 600000, 600000, 600000, 600000, 1000000, 600000]
 
 # Q=3
-# nepochs_list_cpu = [100000, 100000, 100000, 102400, 204800, 409600, 819200]
+nepochs_list_cpu = [100000, 100000, 100000, 102400, 204800, 409600, 819200]
 
 # Q=5
-nepochs_list_cpu = [102400, 102400, 102400, 102400, 204800, 409600, 819200]
+# nepochs_list_cpu = [102400, 102400, 102400, 102400, 204800, 409600, 819200]
 
 graph_version = "New_graphs"
 cluster_list = ["_dresden", ""]
