@@ -237,14 +237,16 @@ def parse_all_varnep(N_list, c_list, q, seedmin, seedmax, path_to_others,
 
 
 graph_version = "New_graphs"
-processor = "CPU"
+# processor = "CPU"
+processor = "GPU"
 program_version = "less_hardloss"
 # program_version = "all_hardloss"
 cluster=""
 # cluster="_dresden"
+parallel_str = "single_graph/"
 
 
-N_list = [128, 256, 512, 1024, 2048, 4096, 8192, 16384]
+N_list = [128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768]
 c_list = np.arange(3.32, 5.01, 0.18)
 q = 3
 # c_list = np.arange(9.9, 13.5, 0.4)
@@ -255,19 +257,19 @@ ntrials = 5
 # nepochs = int(1e5)
 
 # Q=3
-nepochs_list = [100000, 100000, 100000, 102400, 204800, 409600, 819200, 1638400]
+nepochs_list = [100000, 100000, 100000, 102400, 204800, 409600, 819200, 1638400, 3276800]
 
 # Q=5
 # nepochs_list = [102400, 102400, 102400, 102400, 204800, 409600, 819200]
 
 path_to_graph = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/random_graphs/ErdosRenyi/{graph_version}/'
 
-path_to_others = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/{processor}/{program_version}/q_{q}/{graph_version}/others{cluster}'
+path_to_others = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/{processor}/{parallel_str}{program_version}/q_{q}/{graph_version}/others{cluster}'
 # path_to_others = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/Profiling/times_full/q_{q}/others'
 
 path_to_params = "/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/params"
 
-path_out = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/{processor}/{program_version}/q_{q}/{graph_version}/Stats/'
+path_out = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/{processor}/{parallel_str}{program_version}/q_{q}/{graph_version}/Stats/'
 # path_out = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/Profiling/times_full/q_{q}/Stats/'
 # fileout = path_out + f'Full_Stats_recurrent_q_{q}_ErdosRenyi_ntrials_{ntrials}_nep_{nepochs}.txt'
 fileout = path_out + f'Full_Stats_recurrent{cluster}_q_{q}_ErdosRenyi_ntrials_{ntrials}_nep_100N.txt'

@@ -4,7 +4,7 @@ import numpy as np
 from scipy.optimize import leastsq
 
 
-def read_data(path_to_data, filein, n_min, c_min, c_max, column):
+def read_data(path_to_data, filein, n_min, n_max, c_min, c_max, column):
     fin = open(f'{path_to_data}/{filein}', "r")
     fin.readline()
     c_list = []
@@ -18,7 +18,7 @@ def read_data(path_to_data, filein, n_min, c_min, c_max, column):
         line = j.split()
         n = int(line[0])
         c = float(line[1])
-        if n >= n_min:
+        if n_min <= n <= n_max:
             if c_min <= c <= c_max:
                 if c not in c_list:
                     c_list.append(c)
@@ -104,31 +104,34 @@ def main():
     ntrials = 5
     # nep = int(1e5)
     nep = "100N"
-    n_min = 512
-    c_min = 3.5
-    c_max = 3.68
+    n_min = 1024
+    c_min = 3.86
+    c_max = 3.86
     data_kind = 'nepochs'
-    n_max = 10000
+    n_max_read = 30000
+    n_max_sample = 40000
 
     if data_kind == 'nepochs':
-        column = 8
+        column = 12
     elif data_kind == 'runtime':
-        column = 6
+        column = 8
     else:
         print(f'Unknown column for the data on: {data_kind}')
 
     graph_version = "New_graphs"
-    processor = "CPU"
+    # processor = "CPU"
+    processor = "GPU"
     program_version = "less_hardloss"
     # program_version = "all_hardloss"
+    parallel_str = "single_graph/"
     
-    path_to_data = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/{processor}/{program_version}/q_{q}/{graph_version}/Stats'
+    path_to_data = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/{processor}/{parallel_str}{program_version}/q_{q}/{graph_version}/Stats'
 
     filein = f'Full_Stats_recurrent_q_{q}_ErdosRenyi_ntrials_{ntrials}_nep_{nep}.txt'
     fileout = f'fit_pars_{data_kind}_recurrent_q_{q}_ErdosRenyi_ntrials_{ntrials}_nep_{nep}_Nmin_{n_min}_cmin_{c_min}_cmax_{c_max}.txt'
     filedata = f'fit_samples_{data_kind}_recurrent_q_{q}_ErdosRenyi_ntrials_{ntrials}_nep_{nep}_Nmin_{n_min}_cmin_{c_min}_cmax_{c_max}.txt'
 
-    x_data, y_data, sigma_y = read_data(path_to_data, filein, n_min, c_min, c_max, column)
+    x_data, y_data, sigma_y = read_data(path_to_data, filein, n_min, n_max_read, c_min, c_max, column)
     slope0 = 1
     intercepts0 = np.ones(len(x_data))
 
@@ -138,7 +141,7 @@ def main():
     print("Chi squared:", chi_sqr)
 
     print_pars(opt_pars, std_pars, chi_sqr, path_to_data, fileout)
-    sample_data_from_fit(opt_pars, n_max, path_to_data, filedata)
+    sample_data_from_fit(opt_pars, n_max_sample, path_to_data, filedata)
 
 
     return 0
