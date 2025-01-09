@@ -195,7 +195,7 @@ def parse_all_varnep(N_list, c_list, q, seedmin, seedmax, path_to_others,
             for seed in range(seedmin, seedmax + 1):
                 m = int(round(N * c / 2))
                 graphname = f'ErdosRenyi_N_{N}_M_{m}_id_{seed}.txt'
-                fileothers = f'{path_to_others}/others_recurrent_{str_program}_q_{q}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_ntrials_{ntrials}_nep_{nepochs_max}_filename_{graphname}'
+                fileothers = f'{path_to_others}/others_recurrent{str_program}_q_{q}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_ntrials_{ntrials}_nep_{nepochs_max}_filename_{graphname}'
                 e, runtime, nep, found = read_others(fileothers, nepochs_max)
                 if found:
                     print(f'file {fileothers} read')
@@ -239,8 +239,10 @@ def parse_all_varnep(N_list, c_list, q, seedmin, seedmax, path_to_others,
 graph_version = "New_graphs"
 # processor = "CPU"
 processor = "GPU"
-program_version = "less_hardloss"
-# program_version = "all_hardloss"
+# program_version = "less_hardloss"
+# str_program = "_less_hardloss"
+program_version = "all_hardloss"
+str_program = ""
 cluster=""
 # cluster="_dresden"
 parallel_str = "single_graph/"
@@ -279,4 +281,4 @@ fileout = path_out + f'Full_Stats_recurrent{cluster}_q_{q}_ErdosRenyi_ntrials_{n
 
 
 parse_all_varnep(N_list, c_list, q, seedmin, seedmax, path_to_others, fileout, path_to_params, 
-          ntrials, nepochs_list, program_version)
+          ntrials, nepochs_list, str_program)

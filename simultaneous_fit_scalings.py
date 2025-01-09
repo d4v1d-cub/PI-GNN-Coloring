@@ -105,8 +105,8 @@ def main():
     # nep = int(1e5)
     nep = "100N"
     n_min = 1024
-    c_min = 3.86
-    c_max = 3.86
+    c_min = 3.68
+    c_max = 3.68
     data_kind = 'nepochs'
     n_max_read = 30000
     n_max_sample = 40000
@@ -121,8 +121,8 @@ def main():
     graph_version = "New_graphs"
     # processor = "CPU"
     processor = "GPU"
-    program_version = "less_hardloss"
-    # program_version = "all_hardloss"
+    # program_version = "less_hardloss"
+    program_version = "all_hardloss"
     parallel_str = "single_graph/"
     
     path_to_data = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/{processor}/{parallel_str}{program_version}/q_{q}/{graph_version}/Stats'
