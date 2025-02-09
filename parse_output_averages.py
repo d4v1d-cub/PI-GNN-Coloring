@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 
 def read_params(fileparams):
@@ -170,16 +171,35 @@ def parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others,
     fout.close()
 
 
+def read_csv_cadical(q, path_to_csv):
+    filename = f'{path_to_csv}/q{q}_col_labels.csv'
+    df = pd.read_csv(filename)
+    return df
+
+
+def is_sat(df_cadical, N, M, seed):
+    row = df_cadical.loc[df_cadical['cnf_file']==f'sat_{N}_{M}_{seed - 1}.dimacs']
+    if row.empty:
+        return True, False 
+    elif row['sat'].item() == 1:
+        return True, True
+    else:
+        return False, True
+
+
 def parse_all_varnep(N_list, c_list, q, seedmin, seedmax, path_to_others, 
-              fileout, path_to_params, ntrials, nepochs_list, str_program):
+              fileout, path_to_params, ntrials, nepochs_list, str_program, df_cadical):
     fout = open(fileout, "w")
-    fout.write("# N  c  nsamples  P(sol)   av(E)   std(E)   av(runtime)[s]  std(runtime)[s]   av(runtime(Solved))  str(runtime(Solved))   av(nepochs)    std(nepochs)   av(nepochs(Solved))   str(nepochs(Solved))\n")
+    fout.write("# N  c  nsamples  P(sol) P(sol | SAT)  av(E)   std(E)   av(runtime)[s]  std(runtime)[s]   av(runtime(Solved))  str(runtime(Solved))   av(nepochs)    std(nepochs)   av(nepochs(Solved))   str(nepochs(Solved))\n")
     for j in range(len(N_list)):
         N = N_list[j]
         nepochs_max = nepochs_list[j]
         for c in c_list:
             nsamples = 0
             solved = 0.0
+            solved_sat = 0.0
+            n_sat = 0.0
+            in_cadical = True
             fileparams = f'{path_to_params}/params_paper_recurrence.txt'
             randdim, hiddim, dout, lrate = read_params(fileparams)
             av_e = 0.0
@@ -194,18 +214,24 @@ def parse_all_varnep(N_list, c_list, q, seedmin, seedmax, path_to_others,
             av_nep_solved_sqr = 0.0
             for seed in range(seedmin, seedmax + 1):
                 m = int(round(N * c / 2))
+                sat, in_cadical_seed = is_sat(df_cadical, N, m, seed)
+                in_cadical = in_cadical_seed and in_cadical
                 graphname = f'ErdosRenyi_N_{N}_M_{m}_id_{seed}.txt'
                 fileothers = f'{path_to_others}/others_recurrent{str_program}_q_{q}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_ntrials_{ntrials}_nep_{nepochs_max}_filename_{graphname}'
                 e, runtime, nep, found = read_others(fileothers, nepochs_max)
                 if found:
                     print(f'file {fileothers} read')
                     nsamples += 1
+                    if sat:
+                        n_sat += 1
                     if e == 0:
                         solved += 1
                         av_runtime_solved += runtime
                         av_runtime_solved_sqr += runtime ** 2
                         av_nep_solved += nep
                         av_nep_solved_sqr += nep ** 2
+                        if sat:
+                            solved_sat += 1
                     av_e += e
                     av_e_sqr += e ** 2
                     av_runtime += runtime
@@ -230,7 +256,13 @@ def parse_all_varnep(N_list, c_list, q, seedmin, seedmax, path_to_others,
                 std_runtime_solved = np.sqrt((av_runtime_solved_sqr - av_runtime_solved * av_runtime_solved) / nsamples)
                 std_nep_solved = np.sqrt((av_nep_solved_sqr - av_nep_solved * av_nep_solved) / nsamples)
 
-                fout.write(str(N) + "\t" + str("{0:.3f}".format(c)) + "\t" + str(nsamples) + "\t" + str(solved / nsamples) + "\t" + str(av_e) + "\t" + str(std_e)
+                if in_cadical:
+                    solved_sat_frac = str(solved_sat / n_sat)
+                else:
+                    solved_sat_frac = "ND"
+
+                fout.write(str(N) + "\t" + str("{0:.3f}".format(c)) + "\t" + str(nsamples) + "\t" + str(solved / nsamples) + "\t" + solved_sat_frac
+                            + "\t" + str(av_e) + "\t" + str(std_e)
                             + "\t" + str(av_runtime) + "\t" + str(std_runtime) + "\t" + str(av_runtime_solved) + "\t" + str(std_runtime_solved)
                             + "\t" + str(av_nep) + "\t" + str(std_nep) + "\t" + str(av_nep_solved) + "\t" + str(std_nep_solved) + "\n")
     fout.close()
@@ -239,10 +271,10 @@ def parse_all_varnep(N_list, c_list, q, seedmin, seedmax, path_to_others,
 graph_version = "New_graphs"
 # processor = "CPU"
 processor = "GPU"
-# program_version = "less_hardloss"
-# str_program = "_less_hardloss"
-program_version = "all_hardloss"
-str_program = ""
+program_version = "less_hardloss"
+str_program = "_less_hardloss"
+# program_version = "all_hardloss"
+# str_program = ""
 cluster=""
 # cluster="_dresden"
 parallel_str = "single_graph/"
@@ -276,9 +308,13 @@ path_out = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Colorin
 # fileout = path_out + f'Full_Stats_recurrent_q_{q}_ErdosRenyi_ntrials_{ntrials}_nep_{nepochs}.txt'
 fileout = path_out + f'Full_Stats_recurrent{cluster}_q_{q}_ErdosRenyi_ntrials_{ntrials}_nep_100N.txt'
 
+path_to_csv = '/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/CaDiCal'
+df_cadical = read_csv_cadical(q, path_to_csv)
+
+
 # parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others, fileout, path_to_params, 
         #   ntrials, nepochs)
 
 
 parse_all_varnep(N_list, c_list, q, seedmin, seedmax, path_to_others, fileout, path_to_params, 
-          ntrials, nepochs_list, str_program)
+          ntrials, nepochs_list, str_program, df_cadical)

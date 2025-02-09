@@ -1,5 +1,6 @@
 import networkx as nx
 import numpy as np
+import pandas as pd
 
 
 def parse_line(file_line, node_offset=0):
@@ -71,25 +72,45 @@ def read_params(fileparams):
     return int(line[0]), int(line[1]), float(line[2]), float(line[3])
 
 
+def read_csv_cadical(q, path_to_csv):
+    filename = f'{path_to_csv}/q{q}_col_labels.csv'
+    df = pd.read_csv(filename)
+    return df
+
+
+def is_sat(df_cadical, N, M, seed):
+    row = df_cadical.loc[df_cadical['cnf_file']==f'sat_{N}_{M}_{seed - 1}.dimacs']
+    if row.empty:
+        return True, False 
+    elif row['sat'].item() == 1:
+        return True, True
+    else:
+        return False, True
+
 
 def check_all(N_list, c_list, q, seedmin, seedmax, path_to_graph, path_to_cols_list, 
-              fileout, path_to_params, ntrials, nepochs_list, str_program_list):
+              fileout, path_to_params, ntrials, nepochs_list, str_program_list, df_cadical):
     fout = open(fileout, "w")
-    fout.write("# N  c  nsamples  solved\n")
+    fout.write("# N  c  nsamples  P(sol)  P(sol|SAT) \n")
     for j in range(len(N_list)):
         N = N_list[j]
         path_to_graph_new = path_to_graph + f'N_{N}'
         for c in c_list:
+            m = int(round(N * c / 2))
             nsamples = 0
             solved = 0.0
+            solved_sat = 0.0
+            n_sat = 0.0
+            in_cadical = True
             fileparams = f'{path_to_params}/params_paper_recurrence.txt'
             randdim, hiddim, dout, lrate = read_params(fileparams)
             for seed in range(seedmin, seedmax + 1):
                 found = False
+                sat, in_cadical_seed = is_sat(df_cadical, N, m, seed)
+                in_cadical = in_cadical_seed and in_cadical
                 l = 0
                 while l < len(path_to_cols_list) and not found:
                     nepochs = nepochs_list[l][j]
-                    m = int(round(N * c / 2))
                     graphname = f'ErdosRenyi_N_{N}_M_{m}_id_{seed}.txt'
                     filecols = f'{path_to_cols_list[l]}/coloring_recurrent_{str_program_list[l]}_q_{q}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_ntrials_{ntrials}_nep_{nepochs}_filename_{graphname}'
                     colored, found = check_orig(filecols, path_to_graph_new, graphname, q)
@@ -97,9 +118,19 @@ def check_all(N_list, c_list, q, seedmin, seedmax, path_to_graph, path_to_cols_l
                         print(f'  (found in {str_program_list[l]} l={l})')
                     solved += colored
                     nsamples += found
+                    if sat:
+                        solved_sat += colored
+                        n_sat += found
                     l += 1
             if nsamples > 0:
-                fout.write(str(N) + "\t" + str(c) + "\t" + str(nsamples) + "\t" + str(solved / nsamples) + "\n")
+                if in_cadical:
+                    if n_sat > 0:
+                        str_solved_sat = str(solved_sat / n_sat)
+                    else:
+                        str_solved_sat = "AllSAT"
+                else:
+                    str_solved_sat = "NoData"
+                fout.write(str(N) + "\t" + str(c) + "\t" + str(nsamples) + "\t" + str(solved / nsamples) + "\t" + str_solved_sat + "\n")
             else:
                 print(f'No data for q={q}  N={N}  c={c}')
     fout.close()
@@ -110,20 +141,20 @@ def check_all(N_list, c_list, q, seedmin, seedmax, path_to_graph, path_to_cols_l
 
 
 N_list = [128, 256, 512, 1024, 2048, 4096, 8192]
-# c_list = np.arange(2.96, 5.01, 0.18)
-# q = 3
-c_list = np.arange(9.9, 13.5, 0.4)
-q = 5
+c_list = np.arange(2.96, 5.01, 0.18)
+q = 3
+# c_list = np.arange(9.9, 13.5, 0.4)
+# q = 5
 seedmin = 1
 seedmax = 400
 ntrials = 5
 nepochs_par = [600000, 600000, 600000, 600000, 600000, 1000000, 600000]
 
 # Q=3
-# nepochs_list_cpu = [100000, 100000, 100000, 102400, 204800, 409600, 819200]
+nepochs_list_cpu = [100000, 100000, 100000, 102400, 204800, 409600, 819200]
 
 # Q=5
-nepochs_list_cpu = [102400, 102400, 102400, 102400, 204800, 409600, 819200]
+# nepochs_list_cpu = [102400, 102400, 102400, 102400, 204800, 409600, 819200]
 
 nepochs_list = [nepochs_list_cpu, nepochs_list_cpu, nepochs_par]
 
@@ -144,5 +175,9 @@ path_to_params = "/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Co
 path_out = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/Mixed/q_{q}/Stats/'
 fileout = path_out + f'Solved_recurrent_mixed_q_{q}_ErdosRenyi_ntrials_{ntrials}.txt'
 
+path_to_csv = '/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/CaDiCal'
+df_cadical = read_csv_cadical(q, path_to_csv)
+
 solv_frac = check_all(N_list, c_list, q, seedmin, seedmax, path_to_graph, path_to_cols_list,
-                      fileout, path_to_params, ntrials, nepochs_list, program_version_list)
+                      fileout, path_to_params, ntrials, nepochs_list, program_version_list, 
+                      df_cadical)
