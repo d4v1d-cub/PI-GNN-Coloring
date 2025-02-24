@@ -31,7 +31,7 @@ def read_coloring(filecol):
 def parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others_list, path_to_cols, 
               fileout, path_to_params, ntrials, nepochs_list_cpu, nepochs_par):
     fout = open(fileout, "w")
-    fout.write("# N  c  id  E  ntrials\n")
+    fout.write("# N  M  id  E  ntrials\n")
     for j in range(len(N_list)):
         N = N_list[j]
         for c in c_list:
@@ -52,7 +52,7 @@ def parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others_list, path_to_
                     nsamples += found
                     nsampl_cpu += found
                     if found:
-                        fout.write(f'{N}\t{"{0:.3f}".format(c)}\t{seed}\t{e}\t{ntrials}\n')
+                        fout.write(f'{N}\t{m}\t{seed}\t{e}\t{ntrials}\n')
                     l += 1
 
                 if not found:
@@ -64,7 +64,7 @@ def parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others_list, path_to_
                     nsamples += found
                     nsampl_gpu += found
                     if found:
-                        fout.write(f'{N}\t{"{0:.3f}".format(c)}\t{seed}\t{e}\t{ntrials}\n')
+                        fout.write(f'{N}\t{m}\t{seed}\t{e}\t{ntrials}\n')
             if nsamples > 0:
                 print(f'q={q}  N={N}  c={"{0:.3f}".format(c)}  Nsamples={nsamples}   CPU={nsampl_cpu}  GPU={nsampl_gpu}')
             else:
@@ -73,20 +73,20 @@ def parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others_list, path_to_
 
 
 N_list = [128, 256, 512, 1024, 2048, 4096]
-# c_list = np.arange(2.96, 5.01, 0.18)
-# q = 3
-c_list = np.arange(9.9, 13.5, 0.4)
-q = 5
+c_list = np.arange(2.96, 5.01, 0.18)
+q = 3
+# c_list = np.arange(9.9, 13.5, 0.4)
+# q = 5
 seedmin = 1
 seedmax = 400
 ntrials = 5
 nepochs_par = [600000, 600000, 600000, 600000, 600000, 1000000]
 
 # Q=3
-# nepochs_list_cpu = [100000, 100000, 100000, 102400, 204800, 409600]
+nepochs_list_cpu = [100000, 100000, 100000, 102400, 204800, 409600]
 
 # Q=5
-nepochs_list_cpu = [102400, 102400, 102400, 102400, 204800, 409600, 819200]
+# nepochs_list_cpu = [102400, 102400, 102400, 102400, 204800, 409600, 819200]
 
 graph_version = "New_graphs"
 cluster_list = ["_dresden", ""]
