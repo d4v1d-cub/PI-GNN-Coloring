@@ -141,21 +141,21 @@ def check_all(N_list, c_list, q, seedmin, seedmax, path_to_graph, path_to_cols_l
 # FOR RECURRENT CODE
 
 
-N_list = [128, 256, 512, 1024, 2048, 4096, 8192]
-# c_list = np.arange(2.96, 5.01, 0.18)
-# q = 3
-c_list = np.arange(9.9, 13.5, 0.4)
-q = 5
+N_list = [16, 32, 64, 128, 256, 512, 1024, 2048, 4096]
+c_list = np.arange(2.96, 5.01, 0.18)
+q = 3
+# c_list = np.arange(9.9, 13.5, 0.4)
+# q = 5
 seedmin = 1
 seedmax = 400
 ntrials = 5
-nepochs_par = [600000, 600000, 600000, 600000, 600000, 1000000, 600000]
+nepochs_par = [100000, 100000, 100000, 600000, 600000, 600000, 600000, 600000, 1000000]
 
 # Q=3
-# nepochs_list_cpu = [100000, 100000, 100000, 102400, 204800, 409600, 819200]
+nepochs_list_cpu = [100000, 100000, 100000, 100000, 100000, 100000, 102400, 204800, 409600]
 
 # Q=5
-nepochs_list_cpu = [102400, 102400, 102400, 102400, 204800, 409600, 819200]
+# nepochs_list_cpu = [102400, 102400, 102400, 102400, 102400, 102400, 102400, 204800, 409600]
 
 nepochs_list = [nepochs_list_cpu, nepochs_list_cpu, nepochs_par]
 
