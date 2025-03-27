@@ -1,4 +1,4 @@
-import numpy as np
+import csv
 
 
 def read_params(fileparams):
@@ -30,7 +30,8 @@ def read_coloring(filecol):
 
 def parse_all(N_list, c_list, q, seedmin, seedmax, path_to_files, fileout, path_to_params, ntrials, nepochs_list, flag_single=True):
     fout = open(fileout, "w")
-    fout.write("# N  M  id  E  ntrials\n")
+    writer = csv.writer(fout)
+    writer.writerow(["N", "M",  "id",  "E",  "ntrials"])
     for j in range(len(N_list)):
         N = N_list[j]
         for c in c_list:
@@ -50,7 +51,7 @@ def parse_all(N_list, c_list, q, seedmin, seedmax, path_to_files, fileout, path_
                     e, found = read_coloring(filecols)
                 nsamples += found
                 if found:
-                    fout.write(f'{N}\t{m}\t{seed}\t{e}\t{ntrials}\n')
+                    writer.writerow([N, m, seed, e, ntrials])
             if nsamples > 0:
                 print(f'q={q}  N={N}  c={"{0:.3f}".format(c)}  Nsamples={nsamples}')
             else:

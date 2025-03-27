@@ -1,4 +1,5 @@
 import numpy as np
+import csv
 
 
 def read_params(fileparams):
@@ -31,7 +32,8 @@ def read_coloring(filecol):
 def parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others_list, path_to_cols, 
               fileout, path_to_params, ntrials, nepochs_list_cpu, nepochs_par):
     fout = open(fileout, "w")
-    fout.write("# N  M  id  E  ntrials\n")
+    writer = csv.writer(fout)
+    writer.writerow(["N", "M",  "id",  "E",  "ntrials"])
     for j in range(len(N_list)):
         N = N_list[j]
         for c in c_list:
@@ -52,7 +54,7 @@ def parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others_list, path_to_
                     nsamples += found
                     nsampl_cpu += found
                     if found:
-                        fout.write(f'{N}\t{m}\t{seed}\t{e}\t{ntrials}\n')
+                        writer.writerow([N, m, seed, e, ntrials])
                     l += 1
 
                 if not found:
@@ -64,7 +66,7 @@ def parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others_list, path_to_
                     nsamples += found
                     nsampl_gpu += found
                     if found:
-                        fout.write(f'{N}\t{m}\t{seed}\t{e}\t{ntrials}\n')
+                        writer.writerow([N, m, seed, e, ntrials])
             if nsamples > 0:
                 print(f'q={q}  N={N}  c={"{0:.3f}".format(c)}  Nsamples={nsamples}   CPU={nsampl_cpu}  GPU={nsampl_gpu}')
             else:
@@ -73,20 +75,20 @@ def parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others_list, path_to_
 
 
 N_list = [16, 32, 64, 128, 256, 512, 1024, 2048, 4096]
-c_list = np.arange(2.96, 5.01, 0.18)
-q = 3
-# c_list = np.arange(9.9, 13.5, 0.4)
-# q = 5
+# c_list = np.arange(2.96, 5.01, 0.18)
+# q = 3
+c_list = np.arange(9.9, 13.5, 0.4)
+q = 5
 seedmin = 1
 seedmax = 400
 ntrials = 5
 nepochs_par = [100000, 100000, 100000, 600000, 600000, 600000, 600000, 600000, 1000000]
 
 # Q=3
-nepochs_list_cpu = [100000, 100000, 100000, 100000, 100000, 100000, 102400, 204800, 409600]
+# nepochs_list_cpu = [100000, 100000, 100000, 100000, 100000, 100000, 102400, 204800, 409600]
 
 # Q=5
-# nepochs_list_cpu = [102400, 102400, 102400, 102400, 102400, 102400, 102400, 204800, 409600, 819200]
+nepochs_list_cpu = [102400, 102400, 102400, 102400, 102400, 102400, 102400, 204800, 409600, 819200]
 
 graph_version = "New_graphs"
 cluster_list = ["_dresden", ""]
@@ -100,6 +102,6 @@ path_to_cols = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Col
 path_to_params = "/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/params"
 
 path_out = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/Mixed/q_{q}/Stats/'
-fileout = path_out + f'PI-GNN_recurrent_q_{q}_ntrials_{ntrials}.txt'
+fileout = path_out + f'{q}COL-rPI-GNN_ntrials={ntrials}.csv'
 
 parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others_list, path_to_cols, fileout, path_to_params, ntrials, nepochs_list_cpu, nepochs_par)
