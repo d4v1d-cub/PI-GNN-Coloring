@@ -81,7 +81,7 @@ def parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others_list, path_to_
 N_list = [16, 32, 64, 128, 256, 512, 1024, 2048, 4096]
 # c_list = np.arange(2.96, 5.01, 0.18)
 # q = 3
-c_list = np.arange(9.9, 13.5, 0.4)
+c_list = np.arange(9.9, 13.6, 0.4)
 q = 5
 seedmin = 1
 seedmax = 400
@@ -106,6 +106,6 @@ path_to_cols = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Col
 path_to_params = "/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/params"
 
 path_out = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/Mixed/q_{q}/Stats/'
-fileout = path_out + f'{q}COL-rPI-GNN_ntrials={ntrials}.csv'
+fileout = path_out + f'{q}COL_rPI-GNN_ntrials={ntrials}.csv'
 
 parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others_list, path_to_cols, fileout, path_to_params, ntrials, nepochs_list_cpu, nepochs_par)
