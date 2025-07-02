@@ -40,7 +40,6 @@ def parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others_list,
             fileparams = f'{path_to_params}/params_paper_recurrence.txt'
             randdim, hiddim, dout, lrate = read_params(fileparams)
             nsamples = 0
-            nsampl_cpu = 0
             nsampl_gpu = 0
             for seed in range(seedmin, seedmax + 1):
                 found = False
@@ -52,22 +51,22 @@ def parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others_list,
                     fileothers = f'{path_to_others_list[l]}/others_recurrent_less_hardloss_q_{q}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_ntrials_{ntrials}_nep_{nepochs}_filename_{graphname}'
                     e, found = read_others(fileothers)
                     nsamples += found
-                    nsampl_cpu += found
+                    nsampl_gpu += found
                     if found:
                         writer.writerow([N, m, seed, e, ntrials])
                     l += 1
             if nsamples > 0:
-                print(f'q={q}  N={N}  c={"{0:.3f}".format(c)}  Nsamples={nsamples}   CPU={nsampl_cpu}  GPU={nsampl_gpu}')
+                print(f'q={q}  N={N}  c={"{0:.3f}".format(c)}  Nsamples={nsamples}   GPU={nsampl_gpu}')
             else:
                 print(f'q={q}  N={N}  c={"{0:.3f}".format(c)}  NOT FOUND')
     fout.close()
 
 
 N_list = [16, 32, 64, 128, 256, 512, 1024, 2048, 4096]
-# c_list = np.arange(3.32, 5.01, 0.18)
-# q = 3
-c_list = np.arange(9.9, 13.6, 0.4)
-q = 5
+c_list = np.arange(3.32, 5.01, 0.18)
+q = 3
+# c_list = np.arange(9.9, 13.6, 0.4)
+# q = 5
 seedmin = 1
 seedmax = 400
 ntrials = 5
