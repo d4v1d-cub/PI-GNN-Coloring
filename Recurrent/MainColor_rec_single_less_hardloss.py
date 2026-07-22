@@ -20,7 +20,9 @@ def read_params(fileparams):
     fpar.readline()
     line = fpar.readline().split()
     fpar.close()
-    return int(line[0]), int(line[1]), float(line[2]), float(line[3])
+    if len(line) == 4:
+        return int(line[0]), int(line[1]), float(line[2]), float(line[3]), 2
+    return int(line[0]), int(line[1]), float(line[2]), float(line[3]), int(line[4])
 
 # Specify the problem instance to solve and where to find the dataset(s) here:
 q = int(sys.argv[1])
@@ -35,10 +37,10 @@ fileparams = sys.argv[7]
 init_seed = int(sys.argv[8])
 ntries = int(sys.argv[9])
 
-randdim, hiddim, dout, lrate = read_params(fileparams)
+randdim, hiddim, dout, lrate, numlayers = read_params(fileparams)
 
 print("Parameters are:")
-print(f'randdim={randdim}   hiddim={hiddim}    dout={dout}    lrate={lrate}')
+print(f'randdim={randdim}   hiddim={hiddim}    dout={dout}    lrate={lrate}    numlayers={numlayers}')
 
 filename_without_ext = os.path.splitext(os.path.basename(filename))[0]
 
@@ -53,6 +55,7 @@ hypers = {
         'dropout': dout,
         'learning_rate': lrate,
         'hidden_dim': hiddim,
+        'numlayers': numlayers,
         'seed': init_seed
 }
 
