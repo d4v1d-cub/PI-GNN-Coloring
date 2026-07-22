@@ -31,9 +31,8 @@ def read_coloring(filecol):
 
 def parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others_gpu, path_to_others_cpu,
               path_to_cols, fileout, path_to_params, ntrials, nepochs_list_gpu, 
-              nepochs_list_cpu, nepochs_par):
-    fileparams = f'{path_to_params}/params_paper_recurrence.txt'
-    randdim, hiddim, dout, lrate = read_params(fileparams)
+              nepochs_list_cpu, nepochs_par, fileparams):
+    randdim, hiddim, dout, lrate = read_params(f'{path_to_params}/{fileparams}')
     fout = open(fileout, "w")
     writer = csv.writer(fout)
     writer.writerow(["N", "M",  "id",  "E",  "ntrials"])
@@ -131,6 +130,7 @@ path_to_params = "/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Co
 path_out = f'/media/david/Data/UH/Grupo_de_investigacion/Hard_benchmarks/Coloring/PI-GNN/Results/Recurrent/random_graphs/Mixed/q_{q}/Stats/'
 fileout = path_out + f'{q}COL_rPI-GNN_ntrials={ntrials}_new.csv'
 
+fileparams = "params_paper_recurrence.txt"
 parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others_gpu, path_to_others_cpu, 
           path_to_cols, fileout, path_to_params, ntrials, nepochs_list_gpu, nepochs_list_cpu, 
-          nepochs_par)
+          nepochs_par, fileparams)
