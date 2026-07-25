@@ -7,7 +7,13 @@ def read_params(fileparams):
     fpar.readline()
     line = fpar.readline().split()
     fpar.close()
-    return int(line[0]), int(line[1]), float(line[2]), float(line[3])
+    if len(line) == 4:
+        return int(line[0]), int(line[1]), float(line[2]), float(line[3])
+    elif len(line) == 5:
+        return int(line[0]), int(line[1]), float(line[2]), float(line[3]), int(line[4])
+    else:
+        print(f"# The number of parameters in the file {fileparams} is not 4 nor 5")
+        return line
 
 
 def read_others(fileothers):
@@ -19,20 +25,19 @@ def read_others(fileothers):
     return int(line[0]), True
 
 
-def read_coloring(filecol):
-    try:
-        fin = open(filecol, "r")
-    except (IOError, OSError):
-        return -1, False
-    fin.readline()
-    line = fin.readline().split()
-    return int(line[1]), True
-
 
 def parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others,
               fileout, path_to_params, ntrials, nepochs_list, 
               fileparams):
-    randdim, hiddim, dout, lrate = read_params(f'{path_to_params}/{fileparams}')
+    params = read_params(f'{path_to_params}/{fileparams}')
+    if len(params) == 4:
+        randdim, hiddim, dout, lrate = params
+        string_nlayers = "" 
+    elif len(params)== 5:
+        randdim, hiddim, dout, lrate, nlayers = params
+        string_nlayers = f"_nlayers_{nlayers}" 
+    else:
+        return
     fout = open(fileout, "w")
     writer = csv.writer(fout)
     writer.writerow(["N", "M",  "id",  "E",  "ntrials"])
@@ -45,7 +50,7 @@ def parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others,
                 nepochs = nepochs_list[j]
                 m = int(round(N * c / 2))
                 graphname = f'ErdosRenyi_N_{N}_M_{m}_id_{seed}.txt'
-                fileothers = f'{path_to_others}/others_recurrent_less_hardloss_q_{q}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_ntrials_{ntrials}_nep_{nepochs}_filename_{graphname}'
+                fileothers = f'{path_to_others}/others_recurrent_less_hardloss_q_{q}{string_nlayers}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_ntrials_{ntrials}_nep_{nepochs}_filename_{graphname}'
                 e, found = read_others(fileothers)
                 nsamples += found
                 if found:
@@ -75,14 +80,28 @@ path_to_others = "./"
 
 path_to_params = "/home/2a/dm27124/PI-GNN/best_params/rec"
 
-path_out = './'
+path_out = '../../../../'
 
+print("# Processing nlayers=2")
 hiddim_list = [20, 30, 40]
 
 for hiddim in hiddim_list:
 
-    fileout = path_out + f'{q}COL_rPI-GNN_ntrials={ntrials}_hiddim={hiddim}.csv'
+    fileout = path_out + f'{q}COL_rPI-GNN_ntrials={ntrials}_hiddim={hiddim}_nlayers=2.csv'
 
     fileparams = f"params_paper_recurrence_hiddim_{hiddim}.txt"
     parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others, fileout, 
+              path_to_params, ntrials, nepochs_list, fileparams)
+
+print("\n")
+
+hiddim_list_morelayers = [50]
+nlayers_list = [3]
+for nlayers in nlayers_list:
+    print(f"# Processing nlayers={nlayers}")
+    for hiddim in hiddim_list_morelayers:
+        fileout = path_out + f'{q}COL_rPI-GNN_ntrials={ntrials}_hiddim={hiddim}_nlayers={nlayers}.csv'
+
+        fileparams = f"params_paper_recurrence_hiddim_{hiddim}_nlayers_{nlayers}.txt"
+        parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others, fileout, 
               path_to_params, ntrials, nepochs_list, fileparams)
