@@ -44,12 +44,12 @@ def parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others_gpu, path_to_o
             nsampl_single_graph_cpu = 0
             nsampl_parallel = 0
             for seed in range(seedmin, seedmax + 1):
+                m = int(round(N * c / 2))
+                graphname = f'ErdosRenyi_N_{N}_M_{m}_id_{seed}.txt'
                 found = False
                 l = 0
                 while l < len(path_to_others_gpu) and not found:
                     nepochs = nepochs_list_gpu[j]
-                    m = int(round(N * c / 2))
-                    graphname = f'ErdosRenyi_N_{N}_M_{m}_id_{seed}.txt'
                     fileothers = f'{path_to_others_gpu[l]}/others_recurrent_less_hardloss_q_{q}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_ntrials_{ntrials}_nep_{nepochs}_filename_{graphname}'
                     e, found = read_others(fileothers)
                     nsamples += found
@@ -62,8 +62,6 @@ def parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others_gpu, path_to_o
                     l = 0
                     while l < len(path_to_others_cpu) and not found:
                         nepochs = nepochs_list_cpu[j]
-                        m = int(round(N * c / 2))
-                        graphname = f'ErdosRenyi_N_{N}_M_{m}_id_{seed}.txt'
                         fileothers = f'{path_to_others_cpu[l]}/others_recurrent_less_hardloss_q_{q}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_ntrials_{ntrials}_nep_{nepochs}_filename_{graphname}'
                         e, found = read_others(fileothers)
                         nsamples += found
@@ -77,8 +75,6 @@ def parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others_gpu, path_to_o
                     nepochs_l = nepochs_par[j]
                     while l < len(nepochs_l) and not found:
                         nepochs = nepochs_l[l]
-                        m = int(round(N * c / 2))
-                        graphname = f'ErdosRenyi_N_{N}_M_{m}_id_{seed}.txt'
                         filecols = f'{path_to_cols}/coloring_recurrent_parallel_q_{q}_randdim_{randdim}_hidim_{hiddim}_dout_{"{0:.3f}".format(dout)}_lrate_{"{0:.3f}".format(lrate)}_ntrials_{ntrials}_nep_{nepochs}_filename_{graphname}'
                         e, found = read_coloring(filecols)
                         nsamples += found
