@@ -82,19 +82,6 @@ path_to_params = "/home/2a/dm27124/PI-GNN/best_params/rec"
 
 path_out = '../../../../'
 
-print("# Processing nlayers=2")
-hiddim_list = [20, 30, 40]
-
-for hiddim in hiddim_list:
-
-    fileout = path_out + f'{q}COL_rPI-GNN_ntrials={ntrials}_hiddim={hiddim}_nlayers=2.csv'
-
-    fileparams = f"params_paper_recurrence_hiddim_{hiddim}.txt"
-    parse_all(N_list, c_list, q, seedmin, seedmax, path_to_others, fileout, 
-              path_to_params, ntrials, nepochs_list, fileparams)
-
-print("\n")
-
 hiddim_list_morelayers = [50]
 nlayers_list = [3]
 for nlayers in nlayers_list:
