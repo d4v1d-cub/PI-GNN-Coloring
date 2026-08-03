@@ -174,6 +174,9 @@ class GNNSage(nn.Module):
         :type dropout: float
         :param agg_type: Aggregation type for each SAGEConv layer. All layers will use the same agg_type
         :type agg_type: str
+        :param numlayers: Number of learnable layers in the GNN (input layer + number of hidden layers)
+        :default numlayers: 2
+        :type numlayers: int
         """
         
         super(GNNSage, self).__init__()
